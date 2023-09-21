@@ -1,0 +1,250 @@
+---
+title: "PR3 - Vector"
+author: 김서준
+date: "2023년 9월 21일"
+output: html_document
+---
+
+# 1. R에서 기초적인 Data Type
+
+## 1.1. Numeric : 숫자 데이터 인식, 정수, 실수 등
+
+```{r}
+num <- 3 ; class(num)
+numvec <- c(1, 2, 3) ; class(numvec)
+```
+
+## 1.2. Complex : 복소수 a+bi
+
+```{r}
+comp <- 2 + 3i ; class(comp)
+compvec <- c(2 + 3i, 4 + 5i, 6 + 7i) ; class(compvec)
+```
+
+## 1.3. Character : 글자와 문장 데이터 인식, 특수기호 포함
+
+```{r}
+
+char1 <- "a" ; class(char1)
+char2 <- "character" ; class(char2)
+char3 <- "3" ; class(char3)
+char4 <- "year: 2020" ; class(char4)
+
+```
+
+## 1.4. Logical : 참, 거짓(True or False)의 논리판단
+
+```{r}
+# 논리형 데이터(Logical Data)는 참/거짓의 두가지만 존재함
+logic1 <- TRUE ; class(logic1)
+logic2 <- T ; class(logic2)
+logic3 <- FALSE ; class(logic3)
+logic4 <- F ; class(logic4)
+
+
+logic5 <- 4>5 ; logic5 ; class(logic5)
+logic6 <- 7>2 ; logic6 ; class(logic6)
+
+```
+
+## 1.5. Special Value
+
+```{r}
+NA # NA : 결측값, 데이터가 없는 경우
+NaN # NaN : 불가능한 값(e.g. , 10/0)
+-Inf * 3 # +/- Inf : +/-로 무한대 값
+```
+
+## 1.6. numeric data 와 complex data의 연산
+
+```{r}
+comp + num
+comp - num
+comp * num
+comp / num
+
+comp * 1i
+
+log(comp)
+sqrt(comp)
+```
+
+# 2. Vector
+
+## 2.1. vector 간의 연산
+
+```{r}
+vec1 <- c(2, 4, 1, 3, 4, 5, 1, 2, 3, 5)
+vec2 <- c(4, 5, 2, 3, 8, 3, 4, 1, 5, 2)
+
+vec1 + vec2
+vec1 - vec2
+vec1 * vec2
+vec1 / vec2
+vec1 > vec2
+vec1 >= vec2
+
+12 + vec1
+12 / vec1
+```
+
+## 2.2. character vector
+
+```{r}
+# 문자 및 문장으로 이루어진 데이터 종류 (특수문자 포함)
+# Vector 에 문자와 숫자가 함께 입력되면 숫자도 문자로 취급
+# "" (쌍따옴표)로 데이터 입력
+
+char_vec1 <- c("a", "b", "c") ; class(char_vec1)
+char_vec2 <- c("year", 2020); class(char_vec2)
+```
+
+## 2.3. logical vector
+
+```{r}
+logic_vec1 <- 1:9 > 5 ; logic_vec1 ; class(logic_vec1)
+logic_vec2 <- c(T,F,F,T,F,T,F,T,T,F) ; logic_vec2 ; class(logic_vec2)
+
+# logical data의 연산
+# T or TRUE 는 1로 계산
+# F or FALSE 는 0으로 계산
+
+T + T
+TRUE * FALSE
+sum(T, T, F, T, F)
+```
+
+## 2.4. vector의 생성: 수열
+
+```{r}
+# 1 부터 9까지 1간격으로 증가하면 수열생성
+1:9
+
+#1 부터 9까지 1간격으로 증가하며 수열생성
+seq(from = 1, to=9, by=1)
+
+#1 부터 9까지 3간격으로 증가하며 수열생성
+seq(from = 1, to = 9, by = 3)
+
+#1 부터 9까지 3간격으로 증가ㅏ며 수열생성
+seq(1, 9, 3)
+
+#1 부터 9까지 3등분하는 수열 생성
+seq(1, 9, length.out = 3)
+```
+
+## 2.5. vector의 생성: 원소 반복
+
+```{r}
+rep(c(1, 2, 3), each = 4) # c(1, 2, 3)을 각각 4번 반복하기
+
+rep(c(1, 2, 3), time = 4) # c(1, 2, 3)을 4회 반복하기
+
+rep(c(1, 2, 3), each=4, time=4) # c(1, 2, 3)을 각각 4번씩 4회 반복하기
+```
+
+## 2.6 벡터에 저장된 값 추출 및 수정
+
+```{r}
+a = 1:9 ; a
+
+a[1] #a 의 첫번째 데이터
+
+a[1:4] #a 의 첫번째부터 네번째까지 순차적으로 데이터 불러오기
+
+a[c(1, 2, 5)] #a의 1, 2, 5번째 데이터 불어오기
+
+a[c(-2:-4)] #a의 2번째부터 4번째까지 데이터를 제외한 나머지
+
+a[a > mean(a)] # a에서 a의 평균보다 큰 데이터만 불러오기
+
+a[a == mean(a)] # a에서 a의 평균과 같은 데이터만 불러오기
+
+a[a < mean(a)] = 1 ; a # a 에서 평균보다 작은 값 바꾸기
+
+append(a, 10) # a 에 10을 추가
+
+append(a, 10, 2) # a 에 10을 추가 하되 두번째자리 뒤에 추가
+
+sort(a, decreasing = T) # a 를 내림차순으로 정렬
+
+sort(a, decreasing = F) # a 를 오름차순으로 정렬
+
+a[order(a, decreasing = T)] # a 를 내림차순으로 정렬(벡터의 첨자를 정렬)
+
+a[order(a, decreasing = F)] # a 를 오름차순으로 정렬(벡터의 첨자를 정렬)
+```
+
+## 2.7. 통계함수
+
+```{r}
+a #변수
+
+mean(a) # 평균
+
+var(a) # 분산
+
+sd(a) # 표준편차
+
+summary(a) # 통계적 요약
+
+max(a) # 최댓값
+
+min(a) # 최솟값
+```
+
+## 2.8. 기타 벡터 다루기
+
+```{r}
+object.size(a)
+
+length(a) # a의 길이 세기
+
+nchar("alphago") #문자의 길이 세기
+
+length("alphago")
+
+letters[1:5] #문자열 만들기
+
+names(a) = c("c1", "c2", "c3", "c4", "c5", "c5", "c6") ; a #원소에 이름붙이기, 이름 안붙은 원소는 <NA> 처리
+
+```
+# PR3 연습문제
+## 문제 1
+```{r}
+url <- "https://www.ajou.ac.kr/kr/ajou/notice.do?mode=list&&articleLimit=10&article.offset="
+portal <- paste0(url, seq(from=0, to=90, by=10))
+portal
+```
+## 문제
+```{r}
+player <- c("조영욱", "엄원상", "고영준", "정우영", "정호연", "백승호", "박진섭")
+player_height <- c(178, 173, 168, 180, 180, 182, 184)
+player_team <- c("김천 상무 FC", "울산 현대", "포항 스틸러스", "VfB 슈투트가르트", "광주 FC", "전북 현대 모터스", "전북 현대 모터스")
+player_age <- c(24, 24, 22, 23, 22, 26, 27)
+```
+## 문제 2
+```{r}
+names(player) <- c(10, 11, 13, 7, 15, 8, 4)
+player
+```
+## 문제 3
+```{r}
+player[player_age>24]
+```
+## 문제 4
+```{r}
+player[player_team == "전북 현대 모터스"]
+```
+## 문제 5
+```{r}
+player[player_height>=180]
+```
+## 문제 6
+```{r}
+mean(player_age)
+```
+## 문제 7
+```{r}
+player[player_age == max(player_age)]
+```
