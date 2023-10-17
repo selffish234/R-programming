@@ -1,0 +1,249 @@
+---
+title: "PR5 - Data Frame"
+author: "김서준"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: html_document
+---
+
+# Dataframe
+
+## 1. 벡터를 이용해 데이터프레임 만들기
+
+```{r}
+getwd()
+name <- c("Boil", "Tom", "Ravindra", "Bob", "Sobia")
+gender <- c("M", "M", "F", "M", "F")
+age <- c(17, 21, 33, 12, 37)
+marriage <- c(F, T, F, F, T)
+
+customer <- data.frame(name, gender, age, marriage, stringsAsFactors = T)
+str(customer)
+
+customer <- data.frame(name, gender, age, marriage)
+str(customer)
+
+str(customer)
+names(customer)
+rownames(customer)
+```
+
+## 2. Data Frame 변수명 바꾸기
+
+```{r}
+colnames(customer)
+rownames(customer)
+
+colnames(customer) <- c("cust_name", "cust_gend", "cust_age", "cust_mrg")
+rownames(customer) <- c('a', 'b', 'c', 'd', 'e')
+customer
+```
+
+## 3. Data Frame 데이터 추출
+
+```{r}
+customer[1,] ; customer['a', ] #첫번째 행 숫자 및 rowname 으로 추출
+
+customer[customer$cust_name == "Tom",] #cust_name 컬럼이 Tom 인 row 만 추출
+
+customer[2:5, ] ; customer[-1, ]
+
+customer[customer$cust_name!="Tom",]
+
+customer[c("b", "c"),]
+```
+
+## 4. Data Frame 에 데이터추가
+
+```{r}
+#이름으로 추가
+customer$cust_height <- c("185", "165", "156", "174", "155")
+customer["f", ] <- list("jack", "M", 50, T, "167")
+customer
+
+# cbind, rbind 로 추가
+customer <- cbind(customer, weight = c(80, 70, 65, 48, 55, 100))
+customer <- rbind(customer, g=list("Merry", "F", 42, F, "172", 60))
+customer <- rbind(customer, h = c("Merry", "F", 42, F, "172", 60))
+customer
+```
+
+## 5. Data Frame 에 데이터삭제
+
+```{r}
+customer <- customer[, -5] #5번째 칼럼 빼고 다시 
+customer <- customer[-7, ] #7번째 로우를 없애고 다시 할당
+customer$weight<-NULL
+```
+
+## 6.Data 조건문을 활용해 조작하기
+
+```{r}
+customer[customer$cust_gend == "M",] #customer라는 이름의 데이터 프레임 안에 cust_gend열에서 데이터 값이 M인 행들만 추출
+customer[customer$cust_gend != "F",] #customer라는 이름의 데이터 프레임 안에 csut_gend열에서 데이터 값이 F가 아닌것들만 추출 (!= 는 ~~가 아니다 라는 뜻) 
+nrow(customer[customer$cust_gend == "M",]) #customer라는 이름의 데이터 프레임 안에 cust_gend열에서 데이터 값이 M인 행들의 갯수
+customer[customer$cust_name == "Bob", c("cust_age", "cust_mrg")] #cust_name이 Bob인 행의 "cust_age"와 "cust_mrg"를 추출
+customer[customer$cust_name == "Tom" | customer$cust_name == "Ravindra", ] #cust_name에서 Tom 이거나 Ravindra인 데이터를 추출
+customer[customer$cust_gend=="M" & customer$cust_age>24, ] # cust_gend가 M이고 동시에 cust_age가 24보다 큰 데이터들 추출
+```
+
+## 7. Data frame 정렬하기
+
+```{r}
+order(customer$cust_age)
+
+customer[order(customer$cust_age),]
+
+order(customer$cust_age, decreasing = F)
+
+customer[order(customer$cust_age, decreasing = F),]#내림차순 decreasing = T
+```
+
+## 8. Data frame 기타 함수
+
+```{r}
+
+head(customer) #상위 6개 row
+
+head(customer, 2) #상위 2개 row
+
+tail(customer, 2) #하위 2개 row
+```
+
+#파일 입출력
+
+## 1. 내장데이터 불러오기
+
+```{r}
+#MASS 패키지에는 다양한 데이터가 들어있음
+
+#install.packages("MASS")
+library(MASS)
+# iris 데이터셋
+# 붓꽃의 종과 Sepal 과 Petal 의 너비와 길이에 대한 데이터
+head(iris)
+str(iris)
+
+#mtcars 데이터셋
+# 자동차 차종별 상세스펙에 대한 데이터
+head(mtcars)
+str(mtcars)
+
+#USArrests 데이터셋
+# 1973년도 50 개 주에서 수집된 범죄기록 데이터
+head(USArrests)
+str(USArrests)
+```
+
+## 2.file 로 저장된 데이터 불러오기
+
+```{r}
+csv <- read.csv("read_csv.csv", fileEncoding = 'EUC-KR') ; csv
+
+str(csv)
+getwd()
+
+csv2 <- read.csv("read_csv.csv", header = F) ; csv2
+str(csv2)
+
+csv3 <- read.csv("csv_NA.csv", header =  F, na.strings = c(".", "N.A.", "")) ; csv3
+str(csv3)
+
+csv4 <- read.csv("csv_NA.csv", header = F, stringsAsFactors = F, encoding = "UTF-8") ; csv4
+str(csv4)
+
+table <- read.table("read_csv.csv", header = F, sep = ",", stringsAsFactors = F)
+head(table)
+```
+
+## 3. 웹에 있는 표를 읽어 오기 `readHTMLTable()`
+
+```{r}
+library(XML)
+
+url <- "http://www.worldometers.info/world-population/"
+
+library(httr)
+
+html_source <- GET(url)
+tabs <- readHTMLTable(rawToChar(html_source$content), stringAsFactors = F)
+
+
+world_pop <- tabs$popbycountry
+head(world_pop)
+```
+
+## 4. 데이터 저장하기
+
+```{r}
+table
+
+#write.table(table, "PR_table.csv")
+#write.table(table, "PR_table1.csv", row.names = F)
+#write.csv(table, "PR_table2.csv", row.names = F)
+```
+
+# PR5 연습문제
+데이터 출처: https://www.bigdata-telecom.kr/invoke/SOKBP2603/?goodsCode=LTCFOOD
+
+```{r}
+Sys.setlocale("LC_ALL","C")
+data <- read.csv('temp.csv', encoding = "UTF-8")
+Sys.setlocale("LC_ALL","Korean")
+
+data[which(is.na(data$agrde_code)), "agrde_code"] <- '결측'
+table(data$agrde_code)
+```
+
+### 1.데이터 내에서 연령 코드 변수의 데이터를 연령대로 변경하시오
+
+```{r}
+data$agrde_code[data$agrde_code == 1] <- "20대 미만"
+sum(data$agrde_code == "20대 미만")
+```
+
+### 2.'한식' 업종만을 추출하여 korean_food 라는 변수에 할당하시오.
+
+```{r}
+korean_food <- data[data$induty_nm == "한식", ]
+head(korean_food)
+```
+
+### 3. korean_food 데이터 프레임에서 결제건수가 많은 순서대로 정렬하고 상위 5개 데이터만 추출하시오
+
+```{r}
+order(korean_food$setle_cascnt, decreasing = T)
+head(korean_food[order(korean_food$setle_cascnt, decreasing = T),])
+```
+### 마크다운 오류방지 용
+```{r}
+print("마크다운 오류방지")
+```
+
+### 4.결제건수가 10000회 이상, 150000회 이하이며 20대가 주문한 데이터들의 날짜를 추출하시오.
+
+```{r}
+data[data$setle_cascnt > 10000 & data$setle_cascnt < 150000 & data$agrde_code == 2,"X.U.FEFF.stdr_ym" ]
+```
+
+
+```{r}
+#devtools::install_github("JaseZiv/worldfootballR", ref = "main")
+
+
+library(worldfootballR)
+```
+
+### 5. 아래의 코드를 실행시켰을 때 얻는 데이터는 지난 10월 1일 토트넘과 리버풀의 경기 내용이다. 골을 넣은 토트넘 선수들의 이름을 모두 출력하시오.
+
+```{r}
+match_summary <- fb_match_summary(match_url = "https://fbref.com/en/matches/ec4145b4/Tottenham-Hotspur-Liverpool-September-30-2023-Premier_League")
+match_summary[match_summary$Home_Away == "Home" & match_summary$Event_Type == "Goal","Event_Players"]
+```
+
+### 6. 아래의 코드를 실행시켰을 때 얻는 데이터는 지난 10월 1일 토트넘과 리버풀의 경기에서 발생한 슈팅 정보를 담고 있다. 해당 경기에서 Son Heung-min 선수와 James Maddison 선수의 슈팅 데이터를 추출하시오.
+
+
+```{r}
+shooting <- fb_match_shooting("https://fbref.com/en/matches/ec4145b4/Tottenham-Hotspur-Liverpool-September-30-2023-Premier_League")
+shooting[(shooting$Player == "Son Heung-min" | shooting$Player == "James Maddison"),]
+```
