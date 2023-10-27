@@ -1,0 +1,172 @@
+---
+title: "PR7 - 함수"
+author: "김서준"
+date: "2023년 10월 26일"
+output: html_document
+---
+# Input
+
+## Scan
+- 기초적인 입력 명령어
+- File도 읽어올 수 있음
+- scan()을 입력하면 키보드에서 직접 입력 받을 수 있음
+
+```{r}
+input_scan <- scan()
+input_integer <- scan(what = integer())
+input_data <- scan(what = character())
+scan("PR7.txt")
+```
+## readline
+- 한 줄 단위로 입력을 받는 명령어
+- readline()을 입력하면 한 줄짜리 character 값 입력 가능
+
+```{r}
+a <- readline("수를 입력하세요: ")
+print(a)
+```
+
+# 함수와 사용자 정의 함수
+## 함수
+  - 특정 목적에 맞게 생성된 연산과정의 집합
+  - ex) `mean` 함수 : 모든 원소의 합을 원소의 개수로 나눔
+  
+## 사용자 정의 함수
+  - 사용자의 편의에 따라 직접 작성하여 사용하는 함수
+  -  `함수명 <- function(인수){연산과정}` 형태로 작성(한가지 연산만 할경우 {}로 묶지 않아도 됨)
+  - 연산과정으로 나오는 결과값을 return, print, cat등으로 반환하는 형태가 이상적
+
+### 예시1. 두 숫자를 비교해 더 큰수를 반환하는 함수
+```{r}
+# 2개의 숫자를 인수로 받아서 더 큰수를 반환하는 함수
+compare <- function(x, y) if(x>y) cat(x) else cat(y)
+compare(10, 20)
+```
+
+### 예시2. 평균값과 표준오차를 계산하는 함수
+```{r}
+#표준오차 = 표준편차 / 표본의 크기
+
+se <- function(x) {
+  tmp.sd <- sd(x) # 표준편차
+  tmp.N <- length(x) # 표본크키
+  tmp.se <- tmp.sd / sqrt(tmp.N) # 평균의 표준오차
+  return(tmp.se)
+}
+
+A <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+se(A)
+```
+
+### 예시3. 데이터 프레임의 앞뒤 3개의 데이터를 리스트로 보여주는 함수
+
+```{r}
+head_tail <- function(x){
+  front <- head(x, 3) #데이터프레임 상위 3개 데이터프레임 생성
+  rear <- tail(x, 3) #데이터프레임 하위 3개 데이터프레임 생성
+  F_R <- list(front, rear)
+  return(F_R)
+}
+
+head_tail(mtcars)
+```
+
+### 예시4. 홀수 판별 함수
+```{r}
+oddnum <- function(x){
+  if(x%%2 == 1){ #2로 나눈 나머지가 1이면
+    return(T)
+    } else {
+      return(F)
+    }
+}
+```
+## scope od variable
+  - 함수 바깥에서 생성된 변수는 같은 함수안에서는 언제나 사용가능
+  - 함수 안에서 생성된 변수는 함수가 종료되면 사라짐
+  - 함수 내에서 생성된 변수가 사라지지 않게 하려면 "<<-"을 할당 연산자로 사용
+```{r, }
+#<- 할당연산자 사용
+scopetest <- function(x){
+  a <- 10
+  print(a)
+  print(x)
+}
+
+scopetest(9)
+#print(a)
+
+#<<- 할당연산자 사용
+scopetest <- function(x){
+  a <<- 10
+  print(a)
+  print(x)
+}
+
+scopetest(9)
+print(a)
+```
+
+### 함수의 default 값 설정
+  - 인수를 입력하지 않았을때 자동으로 적용되는 값을 default라고 함
+  -함수작성시 "인수=T 또는 인수="10" 이런식으로 미리 인수에 적용될 값을 입력
+```{r}
+add10 <- function(x = 10)x+10
+add10()
+add10(20)
+```
+#PR7 연습문제
+```{r}
+#readline 사용
+crawling <- function() {
+  library(httr)
+  library(rvest)
+  x <- readline("링크 끝을 입력하세요: ")
+  urls <- paste0('https://www.se.com/kr/ko/product-category/', x, "/")
+  data <- GET(urls)
+  my_html <- read_html(data)
+  nodes_1 <- html_nodes(my_html, 'h3.range-thumb__title.js-range-thumb-title')
+  title_len <- length(html_text(nodes_1))
+  product_title <- html_text(nodes_1)
+  nodes_2 <- html_nodes(my_html, 'div.range-thumb__desc.js-smart-ellipsis-soft')
+  content_len <- length(html_text(nodes_2))
+  product_content <- html_text(nodes_2)
+  df <- data.frame(product_title = product_title, product_content = product_content)
+  df$product_title <- gsub("\n", "", df$product_title)
+  df$product_content <- gsub("\n", "", df$product_content)
+  df$product_title <- gsub("\\s+", " ", df$product_title)
+  df$product_content <- gsub("\\s+", " ", df$product_content)
+  df2 <-data.frame(title_EA = title_len, content_EA = content_len)
+  print(df2)
+  print(df)
+}
+crawling()
+```
+
+```{r}
+#매개변수 직접 타이핑
+crawling2 <- function(x) {
+  library(httr)
+  library(rvest)
+  urls <- paste0('https://www.se.com/kr/ko/product-category/', x, "/")
+  data <- GET(urls)
+  my_html <- read_html(data)
+  nodes_1 <- html_nodes(my_html, 'h3.range-thumb__title.js-range-thumb-title')
+  title_len <- length(html_text(nodes_1))
+  product_title <- html_text(nodes_1)
+  nodes_2 <- html_nodes(my_html, 'div.range-thumb__desc.js-smart-ellipsis-soft')
+  content_len <- length(html_text(nodes_2))
+  product_content <- html_text(nodes_2)
+  df <- data.frame(product_title = product_title, product_content = product_content)
+  df$product_title <- gsub("\n", "", df$product_title)
+  df$product_content <- gsub("\n", "", df$product_content)
+  df$product_title <- gsub("\\s+", " ", df$product_title)
+  df$product_content <- gsub("\\s+", " ", df$product_content)
+  df2 <-data.frame(title_EA = title_len, content_EA = content_len)
+  print(df2)
+  print(df)
+}
+crawling2("4200-차단기-및-스위치")
+crawling2("4800-푸시버튼-램프-조이스틱")
+crawling2("1500-접촉기-및-보호-계전기")
+```
