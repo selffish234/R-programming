@@ -47,59 +47,166 @@ sapply(mtcars[1:3,], function(x){x+1}, simplify = F) #데이터프레임 입력,
 ```{r}
 patient <- read.table("sample_data.txt", header = TRUE)
 factor(patient$type)
-tapply(patient$type, patient$)
+tapply(patient$type, patient$type, length) #type에 따른 그룹별 환자의 수
+tapply(patient$age, patient$type, mean)
 ```
 
 ```{r}
 getwd()
 ```
+## 1.5. 'mapply' (multi simple apply)
+- 여러 개의 리스트에 함수를 적용
 
 ```{r}
+m1 <- list(a=c(1:10), b= c(11:20))
+m2 <- list(c=c(21:30), d=c(31:40))
+mapply(sum, m1$a, m2$d) # 2개의 리스트에 적용
+mapply(sum, m1$a, m1$b, m2$c, m2$d) # 4개의 리스트에 적용
+```
+# 2. aggregating
+- 예제데이터
+
+```{r}
+seg.df <- read.csv("rintro-chapter5.csv")
+head(seg.df)
+```
+## 2.1. `mean`, `sd` 통계함수
+```{r}
+attach(seg.df)
+mean(income[Segment == "Moving up"]) #Moving up 세 그먼트집단의소득평균
+mean(income[Segment == "Moving up" & subscribe == "subNo"]) #Moving up 세그먼트 + 서비스 미사용자의 소득평균
+```
+
+## 2.2. `apply` 함수
+```{r}
+apply(seg.df[,c(1,3,4)], 2, mean) #나이, 수입, 자녀수평균
+str(apply(seg.df [, c(1, 3,4)], 2, mean))
+apply(seg.df [Segment == "Moving up", c(1,3,4)], 2, mean) #Moving up 세그먼트 + 서비스미사용자의소득평균
+```
+
+## 2.3. `table` 함수
+```{r}
+table(kids) # 자녀수 현황
+table(ownHome, subscribe) # 이용자기준, 주거형태현황
+table(Segment, kids, subscribe) # 세그먼트, 구독여부, 자녀수
+```
+## 2.4. `by` 함수
+- 사용방식: by(목표변수, 기준변수, 함수)
+- by 함수는 결과 값을 리스트로 반환한다.
+
+```{r}
+by(income, Segment, mean)
+by(income, list(Segment, subscribe), mean)
+```
+## 2.5. `aggregate` 함수
+- 사용방식 : aggregate(목표변수, 기준변수, 함수)
+- 결과값을 데이터프레임으로 출력해 주는 것이 가장 큰 장점임.
+- 기준변수가list로 입력되어야 한다.
+```{r}
+aggregate(income, list(Segment), mean)
+str(aggregate(income, list(Segment), mean))
+```
+
+- 포뮬러를 사용하면 효과적이다 (변수명지정, 리스트변환)
+```{r}
+aggregate(income ~ Segment, data=seg.df, mean)
+aggregate(income~Segment+ownHome+subscribe, data=seg.df, mean)
+```
+
+## 2.6. `cut` 함수
+- cut함수는 연속형 변수를 특정 구간으로 구분하여 명목형 변수로 변환한다.
+- cut(데이터, breaks=구간수, labels = 구간이름)
+```{r}
+cut.data = aggregate(income ~ Segment + ownHome + subscribe, data = seg.df, mean)
+cut.data$income2 = cut(cut.data$income, breaks = seq(0, 70000, 10000))
+cut.data$income2 = cut(cut.data$income, breaks = c(0, 20000, 30000,40000, 50000, 60000, 70000),
+labels = c('2만이하', '2만~3만', '3만~4만', '4만~5만', '5만~6만', '6만이상'))
+cut.data
+```
+## 2.7. `grep` 함수
+
+```{r}
+grep("ap", c("apple", "Apple", "apple2", "bbapple")) #ap를 포함하는 원소들의 위치
+grep ("ap", c("apple", "Apple", "apple2", "bbapple"), value=TRUE) #ap를 포함하는 원소
+grep("[1-3]", c("apple1", "apple2", "apple3", "apple4", "Apple1")) #1,2,3을 포함하는 원소위치
+grepl("ap", c("apple", "Apple", "apple2", "bbapple")) #ap를 포함하는 원소들의위치
+```
+- 공통된 패턴을 가진 자료들의 위치를 찾아서 위치 값을 활용해 데이터를 일괄 변환할 매 사용한다
+```{r}
+seg.df $ownHome = as.character (seg.df$ownHome)
+grep('Yes', seg.df$ownHome)
+head(seg.df)
+seg.df$ownHome [grep('Yes', seg.df$ownHome) ] = 'Yes'
+head(seg.df)
+```
+## 2.8. 'gsub' 함수
+- 현재데이터의 Segment 컬럼에 한칸 띄워쓰기를 없애고 싶을때, 다음과 같이 사용한다.
+```{r}
+seg.df$Segment <- gsub(" ", "", seg.df$Segment)
+head(seg.df)
+```
+
+# PR8 연습문제
+
+다음은 노트북 기종 빛 제조사별 가격 종류 등에 대한 데이터셋이다. 해당 데이터셋을 lapptop이라는 변수에 저장하고 아래의 문제들을 해결하시오.
+```{r}
+laptop <- read.csv("Cleaned_Laptop_data.csv")
+```
+
+
+### 문제1. 노트북 제조사별(brand)로 리뷰의 개수(reviews)를 구하시오
+
+  조건1. answer1이라는 변수에 저장하시오.
+  조건2. head(answer1)을 통해 출력하시오.
+```{r}
+answer1 <- aggregate(reviews ~ brand, data = laptop, FUN = length)
+
+head(answer1)
 
 ```
 
+### 문제2. 6,8,9 번째 열에는 'GB'가 포함되어 있다. 'GB'를 삭제하고 숫자형으로 바꾸시오.
+  조건1. sapply 사용하시오.
+  조건2. gsub 사용하시오.
+  조건3. answer2이라는 변수에 저장하시오.
+  조건4. head(answer2)을 통해 출력하시오.
 ```{r}
+
+answer2 <- laptop
+
+answer2[, c(6, 8, 9)] <- sapply(answer2[, c(6, 8, 9)], function(x) as.numeric(gsub("GB", "", x)))
+
+head(answer2)
 
 ```
 
+## 문제3. 이번 수업 시간에 배웠던 함수를 사용하여 5개 이상의 코드를 작성하고, 주석을 상세하게 추가하시오.
+  조건1. apply계열 함수, aggregate 함수는 반드시 각각 1개 이상씩 포함되어야 함.
+  조건2. 주석은 코드 개수에 포함되지 않음.
 ```{r}
+answer2 <- laptop
+answer2[, c(6, 8, 9)] <- sapply(answer2[, c(6, 8, 9)], function(x) as.numeric(gsub("GB", "", x)))
+# 1. RAM 용량에 따른 가격 평균 및 표준 편차 계산
+ram_mean <- mean(answer2$ram_gb)# RAM 용량의 평균 계산
+ram_sd <- sd(answer2$ram_gb) # RAM 용량의 표준 편차 계산
+ram_price_mean <- aggregate(latest_price ~ ram_gb, data = answer2, FUN = mean)  # RAM 용량별 가격 평균 계산
+head(ram_price_mean)  # 결과 출력
 
-```
+# 2. 브랜드 별 별점 평균 계산
+brand_rate_mean <- aggregate(star_rating ~ brand, data = answer2, FUN = mean)  # 브랜드 별 별점 평균 계산
+head(brand_rate_mean) # 결과 출력
 
-```{r}
+# 3. 운영체제(OS) 별 별점 평균 계산
+os_rate_mean <- tapply(answer2$star_rating, answer2$os, mean)  # 운영체제(OS) 별 별점 평균 계산
+head(os_rate_mean) # 결과 출력
 
-```
+# 4. 운영체제 비트(os_bit)에 따른 가격 평균 계산
+os_bit_price_mean <- aggregate(latest_price ~ os_bit, data = answer2, FUN = mean) # 운영체제 비트별 가격 평균 계산
+head(os_bit_price_mean) # 결과 출력
 
+# 5. 브랜드 별 리뷰 수 합계 계산
+brand_rev_cnt <- aggregate(reviews ~ brand, data = answer2, FUN = sum) # 브랜드 별 리뷰 수 합계 계산
+head(brand_rev_cnt)  # 결과 출력
 
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-```{r}
 
 ```
