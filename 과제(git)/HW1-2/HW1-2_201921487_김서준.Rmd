@@ -1,0 +1,219 @@
+---
+title: "HW1-2 데이터프레임 연습"
+author: "김서준"
+date: "2023 11 12"
+output: html_document
+
+---
+# 1.NBA dataset
+## 1.1
+```{r}
+##출처: https://www.kaggle.com/datasets/bryanchungweather/nba-player-stats-dataset-for-the-2023-2024?rvi=1
+nba_player <- read.csv("https://ajouackr-my.sharepoint.com/:x:/g/personal/rlatjwns234_ajou_ac_kr/EXoB05ZRDKZHvGzUf7jsuNMBq9NaR3lC3pcFUHVGV3c5ZA?e=w9V0IL&download=1")
+#각 컬럼에 대한 정보는 다음과 같다.
+#Player(선수): 선수명, Pos(포지션): 포지션, Age(나이): 나이, Tm(팀): 소속된 팀의 약자, G(게임 수): 출전한 게임 수, GS(선발 출전 수): 선발로 출전한 게임 수, MP(평균 출장 시간): 평균 출장 시간(분 단위), FG(필드 골 성공 횟수): 필드 골 (Field Goals) 성공 횟수, FGA(필드 골 시도 횟수): 필드 골 시도 횟수, FG.(필드 골 성공률): 필드 골 성공률 (FG/FGA), X3P(3점슛 성공 횟수): 3점슛 성공 횟수, X3PA(3점슛 시도 횟수): 3점슛 시도 횟수, X3P.(3점슛 성공률): 3점슛 성공률 (3P/3PA), X2P(2점슛 성공 횟수): 2점슛 성공 횟수, X2PA(2점슛 시도 횟수): 2점슛 시도 횟수, X2P.(2점슛 성공률): 2점슛 성공률 (2P/2PA), eFG.(효과적인 필드 골 성공률): 효과적인 필드 골 성공률 ([(FG + 0.5 * 3P) / FGA]), FT(자유투 성공 횟수): 자유투 성공 횟수, FTA(자유투 시도 횟수): 자유투 시도 횟수, FT.(자유투 성공률): 자유투 성공률 (FT/FTA), ORB(공격 리바운드): 공격 리바운드 (Offensive Rebounds), DRB(수비 리바운드): 수비 리바운드 (Defensive Rebounds), TRB(총 리바운드): 총 리바운드 (Total Rebounds), AST(어시스트): 어시스트 (Assists), STL(스틸): 스틸 (Steals), BLK(블록): 블록 (Blocks), TOV(턴오버): 턴오버 (Turnovers), PF(개인 파울): 개인 파울 (Personal Fouls), PTS(득점): 득점 (Points)
+
+
+```
+
+## 1.2.
+```{r}
+#이 중 Player(선수): 선수명, Pos(포지션): 포지션, Age(나이): 나이, Tm(팀): 소속된 팀의 약자, G(게임 수): 출전한 게임 수, GS(선발 출전 수), X3P.(3점슛 성공률): 3점슛 성공률, X2P.(2점슛 성공률): 2점슛 성공률, TRB(총 리바운드): 총 리바운드 (Total Rebounds), AST(어시스트): 어시스트 (Assists), STL(스틸): 스틸 (Steals), BLK(블록): 블록 (Blocks), TOV(턴오버): 턴오버 (Turnovers), PTS(득점): 득점 (Points) 만을 가지고 다시 데이터 프레임을 생성한다.
+nba_player <- data.frame(
+      "선수명" = nba_player$Player,
+      "포지션" = nba_player$Pos,
+      "나이" = nba_player$Age,
+      "팀" = nba_player$Tm,
+      "출전게임수" = nba_player$G,
+      "선발출전게임수" = nba_player$GS,
+      "3점슛성공률" = nba_player$X3P.,
+      "2점슛성공률" = nba_player$X2P.,
+      "리바운드" = nba_player$TRB,
+      "어시스트" = nba_player$AST,
+      "스틸" = nba_player$STL,
+      "블록" = nba_player$BLK,
+      "턴오버" = nba_player$TOV,
+      "평균득점" = nba_player$PTS,
+      stringsAsFactors = FALSE
+    )
+```
+## 1.3. 
+
+```{r}
+str(nba_player)
+#각 컬럼들의 자료형을 확인한 결과 형변환을 해줘야하는 값은 따로 없다고 판단.
+#그러나 팀이나 포지션별로 무언가 점추정치를 얻으려 할때 평균득점이 0인 즉 팀에 등록만 되있고 뛰지 않은 선수들은 방해가 된다고 여기어 데이터 프레임의 행에서 삭제한다.
+dim(nba_player)
+nba_player <- nba_player[nba_player$평균득점 != 0.0, ]
+dim(nba_player)
+#득점순위 10위까지를 score_top10변수에 저장
+score_top10 <- nba_player[order(nba_player$평균득점, decreasing = TRUE), ][1:10, "선수명"]
+score_top10 <- data.frame("득점순위" = score_top10, "평균득점" = nba_player[order(nba_player$평균득점, decreasing = TRUE), ][1:10,"평균득점"])
+# 결과 출력
+print(score_top10)
+```
+## 1.4. 포지션 별 평균 득점 시각화
+```{r}
+#포지션별 평균득점을 aggregate 를 사용하여 avg_score_by_pos(포지션 별 평균 득점) 라는 변수에 담음
+avg_score_by_position <- aggregate(평균득점 ~ 포지션, data = nba_player, FUN = mean)
+library(ggplot2)#시각화 패키지 ggplot2사용
+ggplot(avg_score_by_position, aes(x = 포지션, y = 평균득점))  + geom_bar(stat = 'identity') #데이터는 데이터프레임 nba_player를 사용하고 x축엔 포지션이 y축엔 평균 득점을 나타내는 그래프를 그린다. 텍스트 겹침을 피하기 위해 45도 돌리고 간격을 조절한다.
+```
+#1.5 팀별 평균 나이 시각화
+```{r}
+#팀별 평균나이을 aggregate 를 사용하여 avg_age_by_team(팀별 평균나이) 라는 변수에 담음
+avg_age_by_team <- aggregate(나이 ~ 팀, data = nba_player, FUN = mean)
+library(ggplot2)#시각화 패키지 ggplot2사용
+ggplot(data = avg_age_by_team, mapping = aes(x = 팀, y = 나이)) + geom_bar(stat = 'identity')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#1.6 
+```{r}
+#가장 평균나이가 많은 팀과 적은 팀을 알아보자!
+head(avg_age_by_team[order(avg_age_by_team$나이, decreasing = TRUE), ])
+tail(avg_age_by_team[order(avg_age_by_team$나이, decreasing = TRUE), ])
+#가장 평균나이가 많은 팀은 토론토 랩터스로 평균나이는 32.25세이며 가장 평균나이가 적은 팀은 오클라호마 시티 썬더스로 23.46세이다. 두 팀간 약 9세의 평균나이차가 있음을 알 수 있다.
+```
+
+## 1.7.
+```{r}
+# 주전 여부를 나타내는 새로운 컬럼 추가
+#"선발출전게임수" 컬럼의 데이터가 6이상이면 주전
+# 3 이상 6미만이면 반주전  
+# 3미만이라면  후보라는 값을 가지는 새로운 컬럼을 추가
+
+nba_player$출전상태 <- ifelse(nba_player$선발출전게임수 >= 6, "주전",ifelse(nba_player$선발출전게임수 >= 3, "반주전", "후보"))
+head(nba_player)
+nba_player$출전상태 <- ifelse(nba_player$선발출전게임수 >= 6, "주전",ifelse(nba_player$선발출전게임수 >= 3, "반주전", "후보"))
+```
+
+## 1.8. 포지션별 
+```{r}
+# 포지션별 스탯을 알아보기 위해 aggregate 함수와 cbind를 이용하였다.
+stats_by_pos <- aggregate(cbind(X3점슛성공률, X2점슛성공률, 리바운드, 어시스트, 스틸, 블록) ~ 포지션, data = nba_player, FUN = mean)
+stats_by_pos
+```
+## 1.9. 팀을 동부, 서부로 분리하기
+```{r}
+#NBA는 동부, 서부로 Division이 분리되어있다.
+#우선 팀이 무었무었이 있는지 알아보자 unique()함수 사용
+unique(nba_player$팀)
+length(unique(nba_player$팀))
+# 동부 지역에 속하는 팀
+eastern_teams <- c("BOS", "BKN", "NYK", "PHI", "TOR", "CHI", "CLE", "DET", "IND", "MIL", "ATL", "CHA", "MIA", "ORL", "WAS")
+
+# 서부 지역에 속하는 팀
+western_teams <- c("DAL", "DEN", "GSW", "HOU", "LAC", "LAL", "MEM", "MIN", "NOP", "OKC", "PHO", "POR", "SAC", "SAS", "UTA")
+
+# 팀별 지역 정보를 나타내는 새로운 컬럼 추가
+nba_player$디비전 <- ifelse(nba_player$팀 %in% eastern_teams, "동부", "서부")
+
+head(nba_player)
+```
+# 2 laptop dataset
+## 2.1.
+```{r}
+#read.csv를 통해 onedrive에 있는 데이터셋을 불러온다.
+#출처: https://www.kaggle.com/datasets/muhammetvarl/laptop-price?rvi=1
+laptop <- read.csv("https://ajouackr-my.sharepoint.com/:x:/g/personal/rlatjwns234_ajou_ac_kr/EaW-BieN9RNJmTrK0h9eh7IBIZED2lCR8AuvMH-1y7lS_Q?e=yVshK9&download=1")
+```
+
+
+
+## 2.2.
+```{r}
+str(laptop)
+#str()을 통해 데이터프레임안에 데이터들의 자료형을 살펴본 결과
+#Ram컬럼과 Weight컬럼이 각각 int형과 num형으로 바뀔 필요가 있는것 같다고 판단된다.
+laptop <- data.frame(
+  "제조사" = laptop$Company,
+  "제품명" = laptop$Product,
+  "화면크기" = laptop$Inches,
+  "Cpu" = laptop$Cpu,
+  "램" = laptop$Ram,
+  "메모리" = laptop$Memory,
+  "운영체제" = laptop$OpSys,
+  "무게" = laptop$Weight,
+  "가격_유로" = laptop$Price_euros,
+  stringsAsFactors = FALSE
+)
+
+
+
+```
+##2.3. 특정 컬럼에서 특정 문자 제거
+
+```{r}
+#자료형을 변환시켜주기위해 먼저 Ram컬럼과 Weight컬럼에서 GB와 kg를 삭제한다.
+laptop$램 <- gsub("GB", "", laptop$램)
+laptop$무게 <- gsub("kg", "", laptop$무게)
+#as.자료형을 사용해서 바꾸어보자
+laptop$램 <- as.integer(laptop$램)
+laptop$무게 <- as.numeric(laptop$무게)
+
+str(laptop)
+```
+##2.4. 유로를 원화로 환전하여 컬럼 추가하기.
+```{r}
+#2023 11 12 기준 1유로화는 1414원이다.
+#laptop$가격_유로 컬럼에 있는 데이터값들에 1414원을 곱해서 원화가격을 구하고 이를 새로운 컬럼
+#가격_원화에 추가한다.
+laptop$가격_원화 <- laptop$가격_유로 * 1414
+head(laptop$가격_원화)
+```
+
+##2.4. 제조사별 평균가격 알아보기, 시각화
+
+```{r}
+#제조사별 평균 가격을 알아보기 위해 먼저 제조사의 갯수를 알아보자
+#length()와 unique()를 사용한다.
+length(unique(laptop$제조사))
+#제조사별 평균 가격을 aggregate 를 사용하여 avg_price_by_com(제조사별 평균가격) 라는 변수에 담음
+avg_price_by_com <- aggregate(가격_원화 ~ 제조사, data = laptop, FUN = mean)
+library(ggplot2)#시각화 패키지 ggplot2사용
+#y축의 단위는 백만원으로 한다.
+ggplot(data = avg_price_by_com, mapping = aes(x = 제조사, y = 가격_원화)) + scale_y_continuous(labels = scales::comma_format(scale = 1e-6)) + geom_bar(stat = 'identity')+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## 3. 부산시 주차장 데이터 셋
+## 3.1.
+
+```{r}
+#출처 : https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15070822
+# json파일을 로드하기 위해 jsonlite 라이브러리 사용
+library(jsonlite)
+serviceKey <- "qzyPoUonu9Kh1QHn8bcEq99acdp7FQTJeKtS5NC%2BNGbPLfIMbSlzKyAd9WOqLoypM%2F36S7wDOrnfcmeiPYPmiA%3D%3D"
+numofRows <- "255" #이 파일은 데이터 행의 수가 255개임
+pageNo <- "1"
+resultType <- 'json'
+
+url_json <- paste0('http://apis.data.go.kr/3330000/HeaundaeParkingInfoService/getParkingLotList?serviceKey=',serviceKey,
+                   '&numOfRows=',numofRows,
+                   '&pageNo=',pageNo,
+                   '&resultType=', resultType)
+
+result <- fromJSON(url_json)
+parking_Busan <- result$getParkingLotList$item
+str(parking_Busan)
+```
+
+## 3.2. 자료형 바꾸기
+```{r}
+#위도와 경도의 자료형을 numeric형 데이터로 바꾼다.
+parking_Busan$lat <- as.numeric(parking_Busan$lat)
+parking_Busan$lng <- as.numeric(parking_Busan$lng)
+print(class(parking_Busan$lat))
+print(class(parking_Busan$lng))
+```
+
+
+## 3.3. 분류명 별로 몇개씩의 주차장이 있는지 시각화하기
+
+```{r}
+length(unique(parking_Busan$clsName)) # 데이터의 종류 갯수 확인
+classify <- parking_Busan$clsName 
+library(ggplot2) #그래프 시각화 패키지를 불러온다.
+ggplot(data = parking_Busan, mapping = aes(x = classify)) + geom_bar()+theme()
+```
+
+
