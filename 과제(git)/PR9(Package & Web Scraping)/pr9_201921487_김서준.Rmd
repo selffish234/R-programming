@@ -1,0 +1,449 @@
+---
+title: "PR9 - Package & Web Scraping"
+author: "김서준"
+date: "2023년 11월 10일"
+output: html_document
+---
+# 1. package 기본
+
+- R에서 기본적으로 제공하는 함수 외에 다른 프로그래머들이 필요하다고 생각해서 만들어 놓은 함수들의 모음
+- 이것을 보통 library 또는 API라고 칭함
+- R에서는 보통 CRAN에서 R재단이 인정한 패키지들을 공유
+- 비공짓적이지만 개인이 만들어서 공유한 패키지들이 있고 보통 github에 업로드 돼 있음
+
+## 1.1. 설치
+
+- 설치 명령어: `install.packages()
+- 다음 시간 사용할 크롤링 관련 패키지 설치
+
+```{r}
+getwd()
+#install.packages("rvest")
+#install.packages("httr")
+#install.packages("RSelenium")
+```
+
+## 1.2. 불러오기
+
+ + `libray(package 이름)` : 설치되어 있는 패키지를 불러옴
+ + `require`(package 이름)` : 불러오려는 시도를 하고 logical한 return 값을 반환
+ 
+- `require()`도 결과적으로 `library()`와 동일한 기능을 하지만, 결과값에서 차이가 나게된다.
+
+```{R}
+x <- library(rvest);x
+x <- require(rvest);x
+```
+
+```{R}
+#해당패키지가 없다고 에러가 뜨며 결과 knit시 에러가 발생할 수 있는 부분.
+#library(chorn)
+
+#해당 패키지가 없더라도 에러메시지가 뜨지 않고 knit를 정상적으로 진행할 수 있다.
+require(chorn)
+```
+
+
+## 1.3. 패키지 업데이트
+ - 패키지 개발자가 자신이 만든 패키지의 기능을 보완하거나, R버전이 업데이트 되어 호환이 되게 수정하거나 오류사항을 수정
+ - 명령어는 `update.packages(패키지 이름)`
+ - R Studio 를 사용한다면 우측 하단에 packages 탭이 보이는데 해당 탭 바로 밑에 update라는 항목이 보인다.
+ - 이걸 누르고 원하는 패키지 혹은 전체를 선택하고 업데이트를 누르면 됨
+ 
+```{R}
+#update.packages("rvest")
+```
+
+## 1.4. 불러온 패키지 사용중지
+
+```{R}
+#detach("packages:ggplot2", unload = T)
+```
+
+# 2. package 고급
+
+## 2.1. package에서 함수 가져오기
+- 다양한 패키지들을 불러오다 보면, 동일한 함수명을 사용해서 서로 충돌할 때가 있다.
+- 그럴때는 `패키지명::함수명`으로 어떤 패키지에서 해당 함수를 사용할 것인지 명시해서 문제를 해결할 수 있다.
+```{R}
+#require(plyr)
+#require(Hmisc)
+#require(chron)
+#require(tseries)
+
+#plyr::summarize
+#Hmisc::summarize
+#chorn::is.weekend()
+#tseries::is.weekend()
+```
+- **실습**:
+```{R}
+library(readxl)
+readxl::read_xlsx("student.xlsx")
+```
+
+## 2.3. 편리한 사용자 정의 함수
+- 해당 함수는 패키지명으로 구성된 문장형 벡터를 입력으로 받아서, 설치 및 불러오기를 동시에 진행하는 함수입니다.
+- 만약 해당 패키지가 이미 설치되어 있는 패키지라면 바로 설치과정을 생략하고 바로 불러오기를 진행하게 됩니다.
+```{R}
+take <- function(x) {
+  for (i in x) {
+    if (!is.element(i, .packages(all.available = TRUE))) {
+      install.packages(i)
+    }
+    library(i, character.only = TRUE)
+  }
+}
+take(c("rvest", "httr"))
+```
+# 3. `devtools`
+- `devtools`의 주 목적은 패키지 개발에 필요한 많은 작업들을 단순화시키는 것이다. 뿐만 아니라 비공식 패키지 버전 관리의 측면에서는 상당히 중요한 패키지 이다.
+## 3.1. 비공식 패키지 설치
+- CRAN에서 제공하는 패키지가 아닌, github에 공개되어 있는 다영한 패키지들고 설치하여 사용할 수 있다.
+
+```{R}
+#install.packages("devtools")
+library(devtools)
+
+#install_github("패키지")
+```
+
+## 3.2. 원하는 버전 설치
+
+- R의 패키지들이 최신 버전에 맞춰서 업데이트가 되지 않았다면, 이전 버전의 패키지를 사용해야만 하는 경우들이 있으며 이때 사용하는 것이 `devtools`의 `install_version()`입니다.
+- `install_version("패키지명", version = "버전명", repos = "https://cran.us.r-project.org")`
+  + 패키지명과 어떤 버전명을 지정해주면 되며, **repos**는 어떤 서버네서 핻ㅇ 내용을 다운받을지 지정해주는 것이다.
+  
+  
+```{R}
+#library(devtools)
+#remove.packages("ggplot2")
+#install_version("ggplot2", version = "0.9.1", repos = "https://cran.us.r-project.org")
+#packageVersion("ggplot2)
+```
+- 이 과정을 실습해 봤다면 `ggplot2`를 지운 후 밑의 `tidyverse`로 설치를 진행하면 된다.
+```{R}
+# remove.packages("ggplot2)
+```
+# 4. `tidyverse`
+
+- tidyverse`는 `dplyr`, `tidyr`, `ggplot2` 등, R 프로그래밍의 핵심 패키지들을 한번에 설치 및 관리해주는 패키지이다.
+```{R}
+#install.packages("tidyverse")
+#install.packages("glue")
+library(tidyverse)
+```
+
+# 패키지 연습문제
+
+### github에 개인 패키지 만들기
+
+```{R}
+#install_github("selffish234/selffish234R")
+library(selffish234R)
+selffish234R::double(3)
+```
+# rvest를 이용하여 아주대 공지사항 크롤링
+
+```{R}
+library(rvest) # rvest 패키지 로드
+
+title <- NULL
+dept <- NULL
+date <- NULL
+# 데이터 저장을 위한 빈 벡터 초기화
+
+# 1, 2 페이지를 크롤링하기 위한 for 반복문
+for (i in 1:2) {
+  url <- "https://www.ajou.ac.kr/kr/ajou/notice.do?mode=list&&articleLimit=10&article.offset="
+#크롤링할 페이지(몇페이지인지를 나타내는 부분은 현재 없음)
+  urls <- paste0(url, (i-1)*10) #몇페이지인지를 나타내주는 부분을 이전 url에 붙임
+  html_source <- read_html(urls)  # HTML 읽어오기
+  
+# 공지사항 페이지에서 13번째부터 22번째 까지의 내용을 반복문을 통해 순회
+  for (i in 13:22) {
+#제목 크롤링 코드
+    T.selector <- paste0("#cms-content > div > div > div.bn-list-common02.type01.bn-common-cate > table > tbody > tr:nth-child(", i, ") > td.b-td-left > div > a")
+    title.nodes <- html_nodes(html_source, T.selector)
+    T.title <- html_text(title.nodes)
+    title <- c(title, T.title)
+    
+# 담당부서 크롤링 코드
+    D.selector <- paste0("#cms-content > div > div > div.bn-list-common02.type01.bn-common-cate > table > tbody > tr:nth-child(", i, ") > td:nth-child(5)")
+    dept.nodes <- html_nodes(html_source, D.selector)
+    T.dept <- html_text(dept.nodes)
+    dept <- c(dept, T.dept)
+
+#날짜 크롤링 코드
+     date.selector <- paste0("#cms-content > div > div > div.bn-list-common02.type01.bn-common-cate > table > tbody > tr:nth-child(", i, ") > td:nth-child(6)")
+    date.nodes <- html_nodes(html_source, date.selector)
+    T.date <- html_text(date.nodes)
+    date <- c(date, T.date)
+    
+  }
+}
+
+```
+
+
+```{R}
+#위에서 title, date, dept에 벡터로 저장한 데이터들로 ajou.notice라는 이름의 데이터 프레임을 생성
+ajou.notice <- data.frame(title, date, dept)
+
+ajou.notice[,1] <- gsub("\n", "", ajou.notice[,1])#줄바꿈 제거(공백으로 대체)
+ajou.notice[,1] <- gsub("\t", "", ajou.notice[,1])# 탭 제거(공백으로 대체)
+ajou.notice[,1] <- gsub("\r", "", ajou.notice[,1])#문자열에서 줄을 바꿀 때 사용되는 제어 문자 중 하나인 캐리지 리턴 제거(공백으로 대체)
+
+head(ajou.notice)
+```
+
+# Rselenium을 이용한 '관광' 분야의 연구개발 성과 크롤링코드
+
+```{R}
+# RSelenium 과 필요한 패키지들 로드
+library(RSelenium)
+library(httr)
+library(dplyr)
+# 원격 드라이버를 설정하며 크롬드라이버를 이용한다.
+remDR <- remoteDriver(remoteServerAddr="localhost", port=4445L, browserName="chrome")
+remDR$open() #원격드라이버를 실행한다. 
+
+# navigate함수를 통해 해당 웹사이트로 이동
+remDR$navigate('https://www.ntis.go.kr/outcomes/popup/srchRstList.do')
+
+find_ <- remDR$findElement(using="css", value="#searchKey") #searchKey라는 아이디를 가진 요소를 찾는 코드
+find_$clickElement() #찾은 요소를 클릭한다.
+find_$sendKeysToElement(list("관광")) #클릭한 부분에 "관광"이라는 값을 보낸다(입력한다.)
+
+find_click <- remDR$findElement(using="css", value="#btnHeaderSearch") #btnHeaderSearch라는 id를 가진 요소를 찾는다.
+Sys.sleep(1) #잠시 대기하고
+find_click$clickElement() #찾은 요소릉 클릭한다.
+
+Sys.sleep(1)
+research_ <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/div[4]/div[1]/table/tbody/tr[6]/td/ul/li[1]/input')
+# 연구개발성과부분에서 "논문"을 찾고
+research_$clickElement() #클릭하여 체크표시를 하고
+filter_click <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/button')
+#적용하기 버튼을 찾고
+filter_click$clickElement()#클릭을 한다.
+research_ <- remDR$findElement(using = 'css', value = paste0('#content > div.layoutBox > div.list_box > div:nth-child(2) > div > a.rstTitle'))#필터를 적용해서 나온 결과중 첫번째 논문의 제목을 찾고
+research_$clickElement()#클릭한다.
+###
+myswitch <- function (remDr, windowId)
+{
+  qpath <- sprintf("%s/session/%s/window", remDr$serverURL,
+                   remDr$sessionInfo[["id"]])
+  remDr$queryRD(qpath, "POST", qdata = list(handle = windowId))
+}
+check_handle <- FALSE
+count <- 0
+while(!check_handle || count > 20){
+  count <- count + 1
+  windows_handles <- remDR$getWindowHandles()
+  if(length(windows_handles) < 2){
+    Sys.sleep(1)
+  }else{
+    check_handle <- TRUE
+  }
+}
+
+myswitch(remDR, windows_handles[[2]])
+#### 여기까지.
+
+research_title <- remDR$findElement(using='css', value='#content > div.po_rel > div.outcomesheader_wrap > dl > dd > span.head')#논문의 제목을 찾고
+research_title$getElementText()[[1]] #스칼라형태로 가져온다.
+research_date <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > table > tbody > tr:nth-child(4) > td:nth-child(4)') #논문이 작성된 날짜를 찾고
+research_date$getElementText()[[1]] # 스칼라 형태로 가져온다.
+research_abstract <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > dl > dd') #논문의 초록을 찾고
+research_abstract$getElementText()[[1]] #스칼라 형태로 가져온다.
+remDR$closeWindow()#창을 닫는다.
+myswitch(remDR, windows_handles[[1]])
+
+```
+
+### 문제1
+
+### 문제2
+-   첫번째 반복문은 공지사항의 몇페이지부터 몇페이지까지의 내용을 가져올때 그 페이지를 지정하기 위함이다. 맨 마지막 부분 offset=뒤에 0이 오면 1페이지 10이오면 2페이지가 오는 구조이기에 이 반복문은 작동한다. 
+-   두번째 반복문은 한페이지에 있는 22개의 공지사항 중 몇번째부터 몇번째까지를 선택할지를 가능하게 하는 반복문이다. 해당 웹페이지는 12번째 까지는 어느페이지에서든 노출되는 [공지]이기 때문에 i 를 임의로 13번째부터 22번째로 조정하였다.
+
+### 문제 3
+-   selenium을 이용해야만 크롤링을 할 수 있는 사이트와 크롤링하려는 이유를 작성하여라.
+selenium을 사용하지 않는다면 사용자의 요구에 따라 동적으로 작동하는 페이지가 아닌 멈춰있는 페이지인 정적인 웹 페이지에서만 정보를 크롤링 할 수있다. 현대 사회에 있어서 SNS는 현대인에게 빠질 수 없는 필수적인 소통의 채널이다. 실시간으로 동적인 움직임을 보이며 댓글이 쌓여가는 sns사이트나 실시간으로 정보가 변하는 금융관련 사이트에서는 selenium을 사용해야만 동적인 사이트를 크롤링 할 수 있다. 
+개인적으로는 실시간 스포츠 스트리밍 사이트의 실시간 댓글을 크롤링하여 그 정보들을 분석해보고 싶다.
+
+## 문제 4
+ 10개의 항목을 크롤링하려고하면 반복된 동작 수행으로 인해 reCAPTCHA로 크롤링이 제대로 안돼서 크롤링 항목수를 5개로 임의로 수정하였습니다.
+ 원래의 반복문은 for (i in 0:9) 입니다.
+```{R}
+library(RSelenium)
+library(httr)
+library(dplyr)
+remDR <- remoteDriver(remoteServerAddr="localhost", port=4445L, browserName="chrome")
+remDR$open()
+remDR$navigate('https://www.ntis.go.kr/outcomes/popup/srchRstList.do')
+
+find_ <- remDR$findElement(using="css", value="#searchKey")
+find_$clickElement()
+find_$sendKeysToElement(list("관광"))
+
+find_click <- remDR$findElement(using="css", value="#btnHeaderSearch")
+find_click$clickElement()
+
+Sys.sleep(1)
+research_ <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/div[4]/div[1]/table/tbody/tr[6]/td/ul/li[1]/input')
+research_$clickElement()
+filter_click <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/button')
+filter_click$clickElement()
+
+research_data <- data.frame(
+  Title = character(),
+  Date = character(),
+  Abstract = character(),
+  stringsAsFactors = FALSE
+)
+
+for (i in 0:4) {
+  research_ <- remDR$findElement(using = 'css', value = paste0('#content > div.layoutBox > div.list_box > div:nth-child(', i + 2, ') > div > a.rstTitle'))
+  research_$clickElement()
+  
+  myswitch <- function (remDr, windowId) {
+    qpath <- sprintf("%s/session/%s/window", remDr$serverURL,
+                     remDr$sessionInfo[["id"]])
+    remDr$queryRD(qpath, "POST", qdata = list(handle = windowId))
+  }
+  
+  check_handle <- FALSE
+  count <- 0
+  while (!check_handle || count > 20) {
+    count <- count + 1
+    windows_handles <- remDR$getWindowHandles()
+    if (length(windows_handles) < 2) {
+      Sys.sleep(1)
+    } else {
+      check_handle <- TRUE
+    }
+  }
+  
+  myswitch(remDR, windows_handles[[2]])
+  Sys.sleep(1)
+  # 여기서부터 데이터 추출
+  research_title <- remDR$findElement(using='css', value='#content > div.po_rel > div.outcomesheader_wrap > dl > dd > span.head')$getElementText()[[1]]
+  research_date <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > table > tbody > tr:nth-child(4) > td:nth-child(4)')$getElementText()[[1]]
+  research_abstract <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > dl > dd')$getElementText()[[1]]
+  
+  # 데이터 프레임에 추가
+  new_data <- data.frame(
+    Title = research_title,
+    Date = research_date,
+    Abstract = research_abstract,
+    stringsAsFactors = FALSE
+  )
+  research_data <- rbind(research_data, new_data)
+  
+  remDR$closeWindow()
+  myswitch(remDR, windows_handles[[1]])
+}
+
+
+# 창 닫기
+remDR$close()
+
+print(research_data)
+
+```
+
+
+## 도전문제
+ 다음 페이지로 가는 코드 
+ `next_page <- remDR$findElement(using = "css", value = 'a[onclick*="srchList(2)"]')`
+ `next_page$clickElement()` 추가
+```{R}
+library(RSelenium)
+library(httr)
+library(dplyr)
+remDR <- remoteDriver(remoteServerAddr="localhost", port=4445L, browserName="chrome")
+remDR$open()
+remDR$navigate('https://www.ntis.go.kr/outcomes/popup/srchRstList.do')
+
+find_ <- remDR$findElement(using="css", value="#searchKey")
+find_$clickElement()
+find_$sendKeysToElement(list("관광"))
+
+find_click <- remDR$findElement(using="css", value="#btnHeaderSearch")
+find_click$clickElement()
+
+Sys.sleep(1)
+research_ <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/div[4]/div[1]/table/tbody/tr[6]/td/ul/li[1]/input')
+research_$clickElement()
+filter_click <- remDR$findElement(using='xpath', value='/html/body/div[2]/div[3]/form/div[5]/div/button')
+filter_click$clickElement()
+
+research_data2 <- data.frame(
+  Title = character(),
+  Date = character(),
+  Abstract = character(),
+  stringsAsFactors = FALSE
+)
+
+next_page <- remDR$findElement(using = "css", value = 'a[onclick*="srchList(2)"]')
+
+next_page$clickElement()
+
+for (i in 0:4) {
+  research_ <- remDR$findElement(using = 'css', value = paste0('#content > div.layoutBox > div.list_box > div:nth-child(', i + 2, ') > div > a.rstTitle'))
+  research_$clickElement()
+  
+  myswitch <- function (remDr, windowId) {
+    qpath <- sprintf("%s/session/%s/window", remDr$serverURL,
+                     remDr$sessionInfo[["id"]])
+    remDr$queryRD(qpath, "POST", qdata = list(handle = windowId))
+  }
+  
+  check_handle <- FALSE
+  count <- 0
+  while (!check_handle || count > 20) {
+    count <- count + 1
+    windows_handles <- remDR$getWindowHandles()
+    if (length(windows_handles) < 2) {
+      Sys.sleep(1)
+    } else {
+      check_handle <- TRUE
+    }
+  }
+  
+  myswitch(remDR, windows_handles[[2]])
+  Sys.sleep(1)
+  # 여기서부터 데이터 추출
+  research_title <- remDR$findElement(using='css', value='#content > div.po_rel > div.outcomesheader_wrap > dl > dd > span.head')$getElementText()[[1]]
+  research_date <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > table > tbody > tr:nth-child(4) > td:nth-child(4)')$getElementText()[[1]]
+  research_abstract <- remDR$findElement(using='css', value='#content > div.po_rel > div.defaultInfo_wrap > div.defaultInfo > dl > dd')$getElementText()[[1]]
+  
+  # 데이터 프레임에 추가
+  new_data <- data.frame(
+    Title = research_title,
+    Date = research_date,
+    Abstract = research_abstract,
+    stringsAsFactors = FALSE
+  )
+  research_data2 <- rbind(research_data2, new_data)
+  
+  remDR$closeWindow()
+  myswitch(remDR, windows_handles[[1]])
+}
+
+
+# 창 닫기
+remDR$close()
+print(research_data2)
+
+```
+
+```{R}
+```
+
+```{R}
+```
+
+```{R}
+```
