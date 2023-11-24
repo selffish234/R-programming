@@ -1,0 +1,637 @@
+---
+title: "PR11 - ggplot"
+author: "김서준"
+date: "2023년 11월 17일"
+output: html_document
+---
+## 1.1. ggplot2 기본 사용법
+- `ggplot` 객체의 구조
+  - `summary`를 보면 대략적인 그래프를 짐작할 수 있음
+  - mapping을 보면 x, y축의 데이터와 색상을 결정짓는 변수를 확인 가능함
+  - faceting은 조건부 출력을 의미함. `facet_null()`은 faceting이 없다는 말
+  -`geom_point()` 는 산점도 그래프라는 의미
+  -`stat_identity`는 통계변환이 identity, 즉 변환이 없는 상태의 데이터라는 것을 의미
+  -`position_identity`도 데이터 위치가 어떠한 조정도 없었다는 것을 의미
+  -`na.rm = False`는 결측값 제거를 하지 않았다는 것을 의미함
+
+## 패키지 설치 및 데이터 준비
+```{r}
+#install.packages("ggplot2")
+#install.packages("titanic")
+
+library(titanic)
+titanic.df <- titanic_train
+
+titanic.df$Survived <- as.factor(titanic.df$Survived)
+titanic.df$Pclass <- as.factor(titanic.df$Pclass)
+titanic.df$Sex <- as.factor(titanic.df$Sex)
+titanic.df$Embarked <- as.factor(titanic.df$Embarked)
+titanic.df$NumRelatives <- titanic.df$SibSp + titanic.df$Parch
+library(ggplot2)
+```
+
+## 1.2. ggplot2로 barplot그리기
+  - 실린더 수에 대한 barplot을 그림
+  - 막대는 기어의 개수에 따라 서로 다른 facet에 출력
+  - facet란 독립된 subplot이 그려지는 패널 구조를 의미
+  - 결과 값을 보면 3개의 subplot이 있는 것을 확인 할 수 있음
+  - 산점도 색상옵션으로 colour인수사용, barplot은 색상옵션으로 fill인수사용
+  
+```{r}
+# survival rates
+ggplot(data = titanic.df, aes( x = Survived)) + 
+  geom_bar()
+
+# Survival rate by gender
+ggplot(data = titanic.df, aes(x = Sex, fill = Survived)) + 
+  geom_bar()
+
+#Proportions of survival rate by gender
+ggplot(data = titanic.df, aes(x = Sex, fill = Survived)) +
+  geom_bar(position = "fill")
+
+# Survival rate by Passenger class
+ggplot(data = titanic.df, aes(x = Pclass, fill = Survived ) ) + 
+  geom_bar()
+
+# Proportions of survival rate by passenger
+ggplot( data = titanic.df, aes(x = Pclass, fill = Survived ) ) +
+  geom_bar( position = "fill")
+
+# Proportions of Passenger class by survival
+ggplot(data = titanic.df, aes(x = Survived, fill = Pclass ) ) +
+  geom_bar( position = "fill" )
+
+# Survival rate by gender, but split barplot by Passenger class
+ggplot(data = titanic.df, aes(x = Sex, fill = Survived) ) +
+  geom_bar ( position = "fill" ) +
+  facet_wrap ( ~ Pclass )
+
+# Survival rate by gender, but split barplot by Passenger class, bars next to each other
+ggplot ( data = titanic.df, aes(x = Sex, fill = Survived ) ) +
+  geom_bar ( position = "dodge" ) +
+  facet_wrap( ~ Pclass )
+
+```
+
+## 1.3. Histograms, boxplots, density plots
+```{r}
+# Age Distribution
+ggplot(data = titanic.df, aes(x = Age ) ) +
+  geom_histogram(binwidth = 5 )
+
+# Age Distribution by survival
+ggplot(data = titanic.df, aes(x = Age, fill = Survived ) ) +
+  geom_histogram( binwidth = 5 )
+
+# Age distribution by survival using boxplots
+ggplot( data = titanic.df, aes(x = Survived, y = Age ) ) +
+  geom_boxplot()
+
+# Age distribution by survival and gender using boxplots
+ggplot(data = titanic.df, aes(x = Survived, y = Age, fill = Sex ) ) + 
+  geom_boxplot()
+
+# Age distribution by survival, gender and passenger class using transparent density plots
+ggplot(data = titanic.df, aes( x = Age, fill= Survived)) +
+  facet_grid( Sex ~ Pclass ) +
+  geom_density ( alpha = 0.5 )
+
+# Age distribution by survival, gender and passenger class using violin plots
+ggplot( data = titanic.df, aes(x = Sex, y = Age, fill = Survived ) ) +
+  facet_grid(~ Pclass ) + 
+  geom_violin()
+```
+
+### 1.4. Scatter plots 산점도
+```{r}
+# Age vs fare
+ggplot(data = titanic.df, aes(x = Age, y = Fare )) +
+  geom_point()
+
+# Age vs fare, color by survival
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived ) ) +
+  geom_point()
+
+# Age vs fare, color by survival, shape by Pclass
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived, shape =
+Pclass ) ) +
+  geom_point ( alpha = 0.5 )
+
+# Age vs fare, color by survival, shape by Pclass, size by number of relatives
+ggplot( data = titanic.df, aes (x = Age, y = Fare, color = Survived, shape =
+Pclass, size = NumRelatives )) +
+  geom_point()
+
+# Age vs fare, color by survival, shape by Pclass, size by number of relatives, semi-transparent points
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived, shape =
+Pclass, size = NumRelatives ) ) +
+  geom_point( alpha = 0.5 ) +
+  scale_size_continuous ( breaks = c(0,2,4,6,10) ) +
+  scale_color_manual (values = c("red", "yellow"))
+
+# Age vs number of relatives, color by survival, semi-transparent points
+library(devtools)
+#devtools::install_github( "hrbrmstr/ggalt" )
+library(ggalt)
+ggplot(data = titanic.df, aes(x = Age, y = NumRelatives, color = Survived )) +
+  geom_point ( alpha = 0.5, size = 3) +
+  geom_encircle(data = subset(titanic.df,
+  Age < 25 & NumRelatives >= 4 & Survived == 0),
+  aes(x = Age, y = NumRelatives ) )
+# Age vs fare, color by survival, smoothed estimator
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived) ) +
+  geom_point () +
+  geom_smooth ( method = "lm")
+```
+
+### 1.5. Line Plots
+```{r}
+# connect people by Cabin numbers
+ggplot(data = subset(titanic.df, Cabin != "" ),
+  aes (x = Age, y = Name, color = Survived)) + 
+  geom_point() +
+  geom_line(aes(group = Cabin))
+```
+
+### 1.6. Fine tuning
+```{r}
+# Scales (color, fill, size, shape, linetype)
+ggplot ( data = titanic.df, aes( x = Age, y = Fare, color = Survived, size = NumRelatives )) +
+  geom_point ( alpha = 0.5 ) +
+  scale_size_continuous (breaks = c(0,5,10),
+  name = "Number of\nrelatives" ) +
+  scale_color_manual( labels = c("False", "True"), values = c("red", "yellow")
+)
+
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived, size = NumRelatives ) ) +
+  geom_point ( alpha = 0.5 ) +
+  scale_y_continuous (trans = "log2") +
+  labs(y = "Fare [$]")
+
+ggplot ( data = titanic.df, aes(x = Age, y = Fare, color = Survived, size = NumRelatives ) ) +
+  geom_point ( alpha = 0.5 ) + 
+  labs (title = "Age vs. Fare" )
+
+```
+### 1.7. Coordinates
+- ggplot은 Layer를 쌓아가는 방식으로 사용
++ $ggplot = layers + scales + coordinate \ system$
++ $layers = data + mapping + geom + stat + position$
+- **scales**와 **coordinate system**은 그림을 그럴 캔버스의 개념
+- **layers**가 실제 그리는 그림
+- **data**，**mapping**, **geom** 등등으로 하나씩 중첩해 가면서 plot을 그림
+- geom의 요소 또한 중첩 가능
+```{r}
+# Flip
+ggplot( data = titanic.df, aes( x = Pclass, fill = Survived ) )+
+  geom_bar () +
+  coord_flip()
+
+# Pie Chart
+ggplot ( data = titanic.df, aes (x = factor(1), fill = Survived) ) +
+  geom_bar ( position="fill" ) +
+  facet_grid( Pclass ~ Sex ) +
+  coord_polar (theta = "y" )
+
+# Themes
+ggplot( data = titanic.df, aes(x = Age, y = Fare, color = Survived, size = NumRelatives ) ) +
+  geom_point( alpha = 0.5 ) +
+  theme_minimal() #
+
+```
+
+## 1.8. smoothers
+```{r}
+ggplot( data = titanic.df, aes( x = Age, y = Fare, color=factor (Pclass)) ) +
+  geom_point() + geom_smooth (method = "lm")
+```
+
+# 2. leaflet
+  -leaflet 패키지는 interactive한 그래프를 그릴 수 있는 패키지
+  - 구글맵과 오픈스트리트 맵을 이용하여 공간데이터를 시각화 함
+  
+  
+```{r}
+library(leaflet)
+library (dplyr)
+
+m = leaflet() %>% addTiles()
+m= m %>% setView(127.0462, 37.2830, zoom = 15)
+m %>% addPopups(127.0462,37.2830, 'Here is Ajou University!')
+m
+```
+
+
+## leaflet예제
+  -addTiles()함수와 addAwesomeMakers 함수 사영
+  - 서울시 교통 돌방상황 조회 서비스 데이터 중 일부를 지도에 표시하기
+
+### 데이터로드 및 시각화 
+```{r}
+traffic <- read.csv("traffic.csv", fileEncoding="utf-8")
+range(traffic$start.pos.x) # 돌발상황 시작점 경도
+range(traffic$start.pos.y) # 돌발상황 시작점 위도
+traffic1<-traffic[traffic$start.pos.x!=0 & traffic$start.pos.y!=0,] #na값 제거(0인값)
+leaflet(traffic1) %>% addTiles() %>%
+addAwesomeMarkers (~start.pos.x, ~start.pos.y)
+```
+
+### 연습문제1
+- 해당 코드는 반응형 시각화 도구인 plotly에 대한 예시 입니다. 위의 따라 쳤던 코드 중 하나를 선택해 plotly를 통해 나타내시오
+```{r}
+#install.packages("plotly")
+library(plotly)
+t = ggplot(iris, aes(Sepal.Length, Sepal.Width, color = Species)) +
+  geom_point(size = 3)
+
+ggplotly(t)
+
+age_fare = ggplot(data = titanic.df, aes(x = Age, y = Fare, color = Survived ) ) +
+  geom_point(size = 1)
+ggplotly(age_fare)
+```
+
+### 연습문제2
+-다음 제공 데이터는 마븡 영화의 박스 오피스 데이터이다.
+-kaggle 에서 공대되어 있는 데이터이며, phase1부터 phase4까지의 각 영화별 상영시간, 제각비용 등에 대한 데이터이다.
+-해당 데이터셋을 활용하여 2가지 이상의 그래프를 그리고 각각의 해석을 적으시오
+```{r}
+data <- read.csv("mcu_box_office.csv")
+str(data)
+```
+
+
+```{r}
+data$production_budget <- gsub(",", "", data$production_budget)
+data$opening_weekend <- gsub(",", "", data$opening_weekend)
+data$domestic_box_office <- gsub(",", "", data$domestic_box_office)
+data$worldwide_box_office <- gsub(",", "", data$worldwide_box_office)
+data$opening_weekend <- as.integer(data$opening_weekend)
+data$domestic_box_office <- as.integer(data$domestic_box_office)
+data$worldwide_box_office <- as.integer(data$worldwide_box_office)
+data$production_budget <- as.integer(data$production_budget)
+data$worldwide_box_office[22] <- 2797800564
+str(data)
+```
+
+
+```{r}
+
+# 데이터프레임에서 mcu_phase 별로 audience_score의 평균 계산
+average_scores <- data %>%
+  group_by(mcu_phase) %>%
+  summarise(mean_audience_score = mean(audience_score))
+
+# mcu_phase 별로 평균 audience_score를 라인 그래프로 그리기
+ggplot(average_scores, aes(x = as.factor(mcu_phase), y = mean_audience_score, group = 1)) +
+  geom_line() +
+  geom_point(size = 3) +
+  labs(title = "Average Audience Score by MCU Phase",
+       x = "MCU Phase",
+       y = "Average Audience Score") +
+  scale_x_discrete(labels = c("1", "2", "3", "4"))  # x 축 레이블 설정
+
+```
+### 연습문제 2-1 설명
+```{r}
+#데이터프레임에서 mcu_phase 별로 audience_score의 평균 계산 한 후에 페이즈 별 audience_score의 평균을 라인그래프로 나타내었다.
+#페이즈 4로 갈수록 나빠지는 여론과는 별개로 페이즈 1,2,3,4 중 4의 평균 평점이 가장 높은것을 확인 할 수 있다.
+```
+
+```{r}
+  filtered_data <- data %>%
+  filter(mcu_phase == 4)
+# 영화별로 domestic_box_office와 worldwide_box_office를 비교하는 그래프 그리기
+ggplot(filtered_data, aes(x = movie_title)) +
+  geom_bar(aes(y = worldwide_box_office, fill = "Worldwide"), stat = "identity") +
+  geom_bar(aes(y = production_budget, fill = "Budget"), stat = "identity") +
+  labs(title = "MCU Phase 4 Movies",
+       x = "Movie Title",
+       y = "Box Office") +
+  scale_fill_manual(values = c("Budget" = "red", "Worldwide" = "yellow")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+### 연습문제 2-2 설명
+```{r}
+#페이즈 4의 영화들의 월드와이드 수익과 촬영예산을 살펴보는 그래프이다.
+#월드 와이드 수익 막대 그래프 위에 촬영예산 그래프를 그렸다.
+#이터널스와 스파이더맨의 촬영예산은 비슷해 보이나 월드와이드 수익에서는 확연한 차이를 보임을 알 수 있다.
+```
+
+### 도전문제
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_bar(mapping = aes(x = cut))
+```
+
+
+```{r}
+diamonds %>% 
+  count(cut)
+#> # A tibble: 5 × 2
+#>   cut           n
+#>   <ord>     <int>
+#> 1 Fair       1610
+#> 2 Good       4906
+#> 3 Very Good 12082
+#> 4 Premium   13791
+#> 5 Ideal     21551
+```
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_histogram(mapping = aes(x = carat), binwidth = 0.5)
+```
+
+
+```{r}
+diamonds %>% 
+  count(cut_width(carat, 0.5))
+#> # A tibble: 11 × 2
+#>   `cut_width(carat, 0.5)`     n
+#>   <fct>                   <int>
+#> 1 [-0.25,0.25]              785
+#> 2 (0.25,0.75]             29498
+#> 3 (0.75,1.25]             15977
+#> 4 (1.25,1.75]              5313
+#> 5 (1.75,2.25]              2002
+#> 6 (2.25,2.75]               322
+#> # ℹ 5 more rows
+```
+
+
+```{r}
+smaller <- diamonds %>% 
+  filter(carat < 3)
+  
+ggplot(data = smaller, mapping = aes(x = carat)) +
+  geom_histogram(binwidth = 0.1)
+```
+
+
+```{r}
+ggplot(data = smaller, mapping = aes(x = carat, colour = cut)) +
+  geom_freqpoly(binwidth = 0.1)
+```
+
+
+```{r}
+ggplot(data = smaller, mapping = aes(x = carat)) +
+  geom_histogram(binwidth = 0.01)
+```
+
+
+```{r}
+ggplot(data = faithful, mapping = aes(x = eruptions)) + 
+  geom_histogram(binwidth = 0.25)
+```
+
+
+```{r}
+ggplot(diamonds) + 
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5)
+```
+
+
+```{r}
+ggplot(diamonds) + 
+  geom_histogram(mapping = aes(x = y), binwidth = 0.5) +
+  coord_cartesian(ylim = c(0, 50))
+```
+
+
+```{r}
+unusual <- diamonds %>% 
+  filter(y < 3 | y > 20) %>% 
+  select(price, x, y, z) %>%
+  arrange(y)
+unusual
+#> # A tibble: 9 × 4
+#>   price     x     y     z
+#>   <int> <dbl> <dbl> <dbl>
+#> 1  5139  0      0    0   
+#> 2  6381  0      0    0   
+#> 3 12800  0      0    0   
+#> 4 15686  0      0    0   
+#> 5 18034  0      0    0   
+#> 6  2130  0      0    0   
+#> 7  2130  0      0    0   
+#> 8  2075  5.15  31.8  5.12
+#> 9 12210  8.09  58.9  8.06
+```
+
+
+```{r}
+diamonds2 <- diamonds %>% 
+  filter(between(y, 3, 20))
+```
+
+
+```{r}
+diamonds2 <- diamonds %>% 
+  mutate(y = ifelse(y < 3 | y > 20, NA, y))
+```
+
+```{r}
+ggplot(data = diamonds2, mapping = aes(x = x, y = y)) + 
+  geom_point()
+#> Warning: Removed 9 rows containing missing values (`geom_point()`).
+```
+
+
+```{r}
+ggplot(data = diamonds2, mapping = aes(x = x, y = y)) + 
+  geom_point(na.rm = TRUE)
+```
+
+
+```{r}
+#install.packages("nycflights13")
+nycflights13::flights %>% 
+  mutate(
+    cancelled = is.na(dep_time),
+    sched_hour = sched_dep_time %/% 100,
+    sched_min = sched_dep_time %% 100,
+    sched_dep_time = sched_hour + sched_min / 60
+  ) %>% 
+  ggplot(mapping = aes(sched_dep_time)) + 
+    geom_freqpoly(mapping = aes(colour = cancelled), binwidth = 1/4)
+```
+
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = price)) + 
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)
+```
+
+
+```{r}
+ggplot(diamonds) + 
+  geom_bar(mapping = aes(x = cut))
+```
+
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = price, y = after_stat(density))) + 
+  geom_freqpoly(mapping = aes(colour = cut), binwidth = 500)
+#> Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.
+#> ℹ Please use `after_stat(density)` instead.
+#> This warning is displayed once every 8 hours.
+#> Call `lifecycle::last_lifecycle_warnings()` to see where this warning was
+#> generated.
+```
+
+
+
+```{r}
+ggplot(data = diamonds, mapping = aes(x = cut, y = price)) +
+  geom_boxplot()
+```
+
+
+
+```{r}
+ggplot(data = mpg, mapping = aes(x = class, y = hwy)) +
+  geom_boxplot()
+```
+
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy))
+```
+
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_boxplot(mapping = aes(x = reorder(class, hwy, FUN = median), y = hwy)) +
+  coord_flip()
+```
+
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_count(mapping = aes(x = cut, y = color))
+```
+
+
+```{r}
+diamonds %>% 
+  count(color, cut)
+#> # A tibble: 35 × 3
+#>   color cut           n
+#>   <ord> <ord>     <int>
+#> 1 D     Fair        163
+#> 2 D     Good        662
+#> 3 D     Very Good  1513
+#> 4 D     Premium    1603
+#> 5 D     Ideal      2834
+#> 6 E     Fair        224
+#> # ℹ 29 more rows
+```
+
+
+```{r}
+diamonds %>% 
+  count(color, cut) %>%  
+  ggplot(mapping = aes(x = color, y = cut)) +
+    geom_tile(mapping = aes(fill = n))
+```
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = carat, y = price))
+```
+
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_point(mapping = aes(x = carat, y = price), alpha = 1 / 100)
+```
+
+
+```{r}
+ggplot(data = smaller) +
+  geom_bin2d(mapping = aes(x = carat, y = price))
+
+ggplot(data = smaller) +
+  geom_hex(mapping = aes(x = carat, y = price))
+```
+
+
+```{r}
+ggplot(data = smaller, mapping = aes(x = carat, y = price)) + 
+  geom_boxplot(mapping = aes(group = cut_width(carat, 0.1)))
+```
+
+
+```{r}
+ggplot(data = smaller, mapping = aes(x = carat, y = price)) + 
+  geom_boxplot(mapping = aes(group = cut_number(carat, 20)))
+```
+
+
+```{r}
+ggplot(data = diamonds) +
+  geom_point(mapping = aes(x = x, y = y)) +
+  coord_cartesian(xlim = c(4, 11), ylim = c(4, 11))
+```
+
+
+```{r}
+ggplot(data = faithful) + 
+  geom_point(mapping = aes(x = eruptions, y = waiting))
+```
+
+
+```{r}
+library(modelr)
+
+mod <- lm(log(price) ~ log(carat), data = diamonds)
+
+diamonds2 <- diamonds %>% 
+  add_residuals(mod) %>% 
+  mutate(resid = exp(resid))
+
+ggplot(data = diamonds2) + 
+  geom_point(mapping = aes(x = carat, y = resid))
+```
+
+
+```{r}
+ggplot(data = diamonds2) + 
+  geom_boxplot(mapping = aes(x = cut, y = resid))
+```
+
+
+```{r}
+ggplot(data = faithful, mapping = aes(x = eruptions)) + 
+  geom_freqpoly(binwidth = 0.25)
+```
+
+
+```{r}
+ggplot(faithful, aes(eruptions)) + 
+  geom_freqpoly(binwidth = 0.25)
+```
+
+
+```{r}
+diamonds %>% 
+  count(cut, clarity) %>% 
+  ggplot(aes(clarity, cut, fill = n)) + 
+    geom_tile()
+```
