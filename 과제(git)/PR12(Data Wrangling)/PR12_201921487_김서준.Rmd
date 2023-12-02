@@ -1,0 +1,1159 @@
+---
+title: "PR12 - Data Wrangling"
+author: "김서준"
+date: "2023-12-01"
+output: html_document
+---
+
+# 1. Data Wrangling with `tidyverse`
+
+- Data Wrangling이란, 분석을 진행하기 위해 날것(raw)의 데이터를 분석에 적합한 형태로 정형화시키는 작업이다.
+- R에서는 `tidyverse`라는 패키지를 구성하고 있어서, 일관성있고 쉬운 작업을 가능하게 한다.
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+# 2. `tidyr`
+
+- `tidyr` 은 Hadley wickham이 만든 데이터의 포맷을 변경하기 위한 패키지
+
+### `tidyr`의 주요함수
+
+함수 | 설명
+------------ | -----------------------------------
+`gather()` | 데이터를 wide에서 long 포멧으로 변경
+`spread()` | 데이터를 long에서 wide 포맷으로 변경
+`separate()` | 단일 열(column)을 복수 열들로 분리
+`unite()` | 복수 열(column)들을 단일 열로 결합
+
+### `tidyr` 실습 데이터: `cases` in `EDAWR`
+- Dataset to support the Expert Data Analysis with R: `EDAWR`
+
+```{r}
+library(devtools)
+#devtools::install_github("rstudio/EDAWR", force = TRUE)
+library(EDAWR)
+head(cases)
+head(pollution)
+head(storms)
+```
+## 2.1. `gather()` 함수
+
+- wide 포맷의 데이터를 원하는 조건에 맞게 long 포맷으로 변환하는 함수
+- `gather(데이터, 키(key), 값(value), ...)`
+  + 키(key): **새로운데이터**에 변수로 표시될 열이름
+  + 값(value): **새로운데이터**에 변수의 값이 표시될 열이름
+  +...: **원데이터**로 부터 모으기(gather)가 진행될 열들의 범위
+  
+```{r}
+gather(cases, year, n, 2:4)
+```
+## 2.2. `spread()` 함수
+- long 포맷의 데이터를 원하는 조건에 맞게 long 포맷으로 변환하는 함수
+- `separate(데이터, 키(key), 값(value), ~)`
+  + 키(key): 복수개의 열로 spread될 기존 long 포맷의 열이름
+  + 값(value): 복수개의 열로 spread 되어 값이 될 기존 long 포맷의 열이름
+```{r}
+spread(pollution, size, amount)
+```
+
+## 2.2. `separate()` 함수
+
+- 하나의 열을 특정 조건에 따라 여러개의 열로 나누어 주는 함수입니다.
+- `separate(data, col, into, sep, ~)`
+  + col: 조건에 따른 분할을 진행할 열이름
+  + into: 분할될 결과가 저장될 각 열들의 이름
+  + sep: 분할 조건
+  
+```{r}
+storms2 <- separate(storms, date, c("year", "month", "day"), sep = "-")
+storms2
+```
+
+## 2.4. `unite()` 함수
+- 여러개로 나누어진 열을 특정 조건에 따라 결합해주는 함수입니다.
+- `unite(data, col, ..., sep)`
+  + `col` : 조건에 따라 결합된 결과가 저장될 열이름
+  + `...`: 합쳐질 열이름들
+  + `sep`: 결합시 구분자
+  
+```{r}
+unite(storms2, "date", year, month, day, sep = "-")
+```
+# 3. `dplyr`
+
+- `dplyr`은 Hadley Wickham이 만든 데이터 핸들링을 위한 패키지
+- `dplyr`은 C++로 작성되어 기존 데이터핸들링 패키지보다 빠른 데이터조작이 가능
+- 각종 데이터베이스 지원(**MYSQL**, **postgreSQL**, **SQLite**, **BigQuery**)
+- R의 기본문법과 프로그래밍능력만으로도 데이터의 조작이 가능하지만, `dplyr`패키지를 활용하면 통일된 문법양식으로 데이터조작이 가능함
+- 체인연산자를 지원합으로(`%>%`) 앞부분의 연산결과를 뒤에 오는 함수의 입력값으로 사용할 수 있음
+
+### `dplyr`의 주요함수
+
+### `dplyr` 실습데이터: `nycflights13`
+  - 미국 휴스턴에서 출발하는 모든 비행기의 이착륙기록
+```{r}
+#install.packages("nycflights13")
+library(nycflights13)
+library(dplyr)
+head(flights)
+``` 
+
+## 3.1 `fliter()` 함수
+  - 데이터에서 원하는 조건에 따라 행을 추출하는 함수
+  - fliter(데이터, 조건1 | 조건2) : 조건1 또는 조건2 둘중 한가지를 충족하는 데이터 추출
+  - fliter(데이터, 조건1 & 조건2) : 조건1과 조건2 모두 충족하는 데이터 추출
+  - 조건을 작성할때 쉼표','는 AND, '|'는 OR와 같음
+```{r}
+filter(flights, month == 1 | day == 1) #37198row
+filter(flights, month == 1, day == 1) #842row
+filter(flights, month == 1, day == 1, year == 2013) #832
+```
+## 3.2 'arrange()` 함수
+- 데이터를 원하는 조건에 따라 정렬해주는 함수
+- arrange(데이터, 정렬기준컬럼1, 정렬기준컬럼2, 정렬기준컬럼3)
+- 내림차순으로 정렬시 desc함수 사용 : arrange(데이터, desc(정렬기준컬럼1))
+```{r}
+arrange(flights, year, month, day) #ArrDelay, Month, Year 순으로 정렬
+arrange(flights, desc(month)) #Month컬럼기준으로 내림차순으로 정렬
+```
+## 3.3 `select()` 함수
+  - select함수는 원하는 열(column)을 추출
+  - select(데이터, 컬럼1, 컬럼2, 컬럼3)
+  - select(데이터, 컬럼1:컬럼3)
+  - 컬럼명을 변경할수 있음
+```{r}
+select(flights, year, month, day)
+select(flights, year:day)
+select(flights, -(year:day))
+```
+## 3.4 `distinct()` 함수
+  - 중복항목을 제외한 데이터를 확인 할 수 있음(unique함수와 동일)
+  - distinct(데이터, 컬럼명)
+```{r}
+distinct(select(flights, tailnum))
+distinct(select(flights, origin, dest))
+```
+
+## 3.5 `mutate()` 함수
+  - 기존 데이터 프레임에 새로운 열을 추가해줌
+  - 데이터프레임 내의 변수들을 활용해 새로운 변수를 만들매 효과적임
+  - 새로 생성한 변수를 해당 함수내에서 바로 활용이 가능
+```{r}
+#arr_delay - dep_delay값으로 gain컬럼 추가
+mutate(flights, gain = arr_delay - dep_delay)
+#gain컬럼을 만드는 동시에 gain컬럼을 이용해 다른 변수를 생성가능
+mutate(flights,
+      gain = arr_delay - dep_delay,
+      gain_per_hour = gain/(air_time/60))
+```
+## 3.6 `summarise()` 함수
+  - mean(), sd(), var(), median()함수를 활용해 기술통계량을 확인
+  - 결과를 데이터프레임으로 반환함
+```{r}
+summarise(flights, delay = mean(dep_delay, na.rm = TRUE))
+```
+## 3.7 `group_by()` 함수
+- 변수의 레벨에 따라 자료를 그룹화해줌
+- 그룹에 따른 수치자료를 산출하고 싶을때 편리함
+- summarize함수와 함께 사용시 aggregate함수와 같은 기능
+- ex)직급에 따른 평균 연봉과 사용가능한 연차일수(휴가)를 구하고 싶을때
+
+```{r}
+#비행기별로 그룹만들기
+by_tailnum <- group_by(flights, tailnum) #비행기별로 그룹만들기
+#비행기별 비행회수, 비행거리평균, 연착시간평균 산출
+delay <- summarise(by_tailnum, count = n(), dist = mean(distance, na.rm = TRUE),
+delay = mean(arr_delay, na.rm = TRUE))
+#회수가 20회이상 , 거리가 2000이하인 비행기만 추출
+delay <- filter(delay, count > 20, dist < 2000)
+```
+- 위에서 만든 delay데이터로 시각화
+```{r}
+library(ggplot2)
+ggplot(delay, aes(dist, delay)) +
+geom_point(aes(size = count), alpha = 1/2) +
+geom_smooth() +
+scale_size_area()
+```
+## 3.8. `join()` 함수
+- join(x, y) 또는 join(x, y, by="기준열") 형태
+- 조인의 기준이 되는 단일 컬럼이 존재하는 경우 별도 by인수를 지정하지 않아도됨
+- 단일 칼럼이 존재하지 않는 경우 by=c(기준열1 = 기준열2)와 같이 설정을 해주어야 함.
+- 조인의 기준이 되는 컬럼이 여러개이거나, 여러가지 컬럼을 동시에 활용해야하는 경우 by인수를 사용
+```{r}
+#install.packages("readr")
+library(readr)
+#join 실습 데이터 생성
+superheroes <- "
+name, alignment, gender, publisher
+Magneto, bad, male, Marvel
+Storm, good, female, Marvel
+Mystique, bad, female, Marvel
+Batman, good, male, DC
+Joker, bad, male, DC
+Catwoman, bad, female, DC
+Hellboy, good, male, Dark Horse Comics
+"
+publishers <- "
+publisher, yr_founded
+DC, 1934
+Marvel, 1939
+Image, 1992
+"
+superheroes <- read_csv(superheroes, trim_ws = TRUE, skip = 1)
+publishers <- read_csv(publishers, trim_ws = TRUE, skip = 1)
+```
+```{r}
+getwd()
+```
+
+
+- inner_join, left_join, full_join, anti_join, semi_join 각각의 출력값확인하기
+
+```{r}
+inner_join(superheroes, publishers) # X, Y의 교집합
+left_join(superheroes, publishers) # X기준(왼쪽)으로 머징
+full_join(superheroes, publishers) #X, Y의 합집합
+anti_join(superheroes, publishers) #X의 컬럼만 유지하며 머징
+semi_join(superheroes, publishers) #Y의 여집합
+```
+# 4. `magrittr`
+  - magrittr 패키지는 면산자(operator)들의 집합들을 제공합니다.
+  - 데이터 연산을 왼쪽에서 오른쪽 순서로 구조화,
+  - nested 함수 호출을 피함,
+  - 지역 변수 및 함수의 정의의 필요성을 최소화,
+  - 연산 순서 내에서 어디서나 추가 step을 만을 수 있음
+  - f(x)를 x %>% f()로 대체할 수 있음
+  - 이 연산자가 main operator(chaining)인데 해당 기능이 의미 없이 보이시겠지만 여러가지 기능을 결합할 때 그 이점이 더욱 명확해집니다.
+  - dplyr을 불러오면 자동으로 불러와지게 됩니다.
+  
+## 4.1 main operator (chaining; `%>%` )
+- 여러단계의 함수나 연산을 연결하여 한번에 수행할 때 사용
+- 앞의 함수의 결과는 바로 뒤에오는 함수의 입력값이 됨
+- 데이터를 여러객체에 할당하지 않아도 되기매문에 메모리 관리에 유리함
+
+### 체인연산 사용하지 않을때
+```{r}
+a1 <- group_by(flights, year, month, day)
+a2 <- select(a1, year:day, arr_delay)
+a3 <- summarise(a2, arr = mean(arr_delay, na.rm = TRUE))
+a4 <- filter(a3, arr > 30)
+a4
+```
+
+### 체인연산 사용했을때
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  select(arr_delay) %>%
+  summarise(
+    arr = mean(arr_delay, na.rm = TRUE)
+    ) %>%
+  filter(arr > 30)
+```
+
+## 4.2. `.`의 역할
+- "."의 역할에 대해서 알아봅시다.
+- 일반적으로 '%>%`연산자만 사용하시게 되면 제일 첫 인수에 자동으로 배정이 됩니다.
+```{r}
+head(iris, 3)
+iris %>% head(3) # = head(., 3)
+```
+- 데이터를 넘겨줘야 할 인수의 위치가 첫번패가 마닐 경우 다음과 같은 에러를 확인할 수 있음
+- 'gsub()`는 찾아 바꾸는 함수로써, 사용방법은 'gsub(찾을문자나 숫자,바꿀문자나 숫자, 데이터)`
+```{r,warning=T}
+a <- c("bannananana", "an apple")
+gsub("n","l",a)
+a %>% gsub("n", "l")
+```
+- 이러한 상황에서, "."을 원하는 위치에 넣어주시면 해당 위치에 데이터가 넘어가게 됨
+- "."은 magrittr나 dplyr에만 속해 있는 것이 마니라 R의 base에 정해진 규칙으로 ` .~ cyl`의 사용법과 같습니다.
+```{r}
+gsub("n","1",a)
+a %>% gsub("n","1",.)
+```
+## 4.3. chaining 예제
+
+### 4.3.1. mtcars aggregate
+
+```{r}
+library(magrittr)
+car_data <-
+  mtcars %>%
+  subset(hp > 100) %>%
+  aggregate(. ~ cyl, data = ., FUN = . %>% mean %>% round(2)) %>%
+  transform(kpl = mpg %>% multiply_by(0.4251)) %>% #4
+  print
+```
+
+- 예제 해석
+  + mtcars 데이터셋을 (#1)
+  + hp를 기준으로 100보다 큰 데이터만 추출한 후(#2)
+  + cy1를 기준으로 각 변수들의 평균을 구한 다음에 소수점 둘째 자리까지 반올림을 한 후(#3)
+  + kpl(kilometer per liter) 열을 만들어 mpg*0.4251을 수행하고(#4)
+  + 만들어진 데이터를 출력(#5)과 동시에 car_data에 할당하는 과정입니다.
+
+- 체인연산없이 실행
+
+```{r}
+car_data <-
+  transform(aggregate(. ~ cyl,
+                      data = subset(mtcars, hp > 100),
+                      FUN = function(x) round(mean(x), 2)),
+            kpl = mpg*0.4251)
+car_data
+```
+
+### 4.3.2. 예제 변환
+
+- ** 2.1 .** 예제
+tidyr의 함수들도 chaining 연산과 함께 사용하면 직관적으로 사용할 수 있습니다.
+```{r}
+cases %>% gather (Year, n, 2:4)
+```
+
+- ** 3.7.** 예제
+dplyr에서도 함께 쓰여 데이터를 그룹화하고 수치를 요약하는 등의 작업에 특화되어 있습니다.
+```{r}
+#비행기별 비행회수, 비행거리평균, 면착시간평균 산출
+flights %>%
+  group_by(tailnum) %>%
+  summarise(
+    count = n(),
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE)
+    )
+```
+# 5. tibble
+- 'tibble'은 tidyverse 생태계에서 데이터 프레임을 대신하여 편리한 기능들 및 동작을 포함한 자료형입니다.
++ factor 자동 변환
++ 일부값만 출력
++ 출력시 자료형 명시
+- 데이터 프레임과 비교
+| 작업유형 | 데이터프레임 명령어 | 티블 명령어
+--------------------------------------------------
+| 생성 | 'data.frame()' | 'data_frame()', 'tibble()`, "tribble() I
+| 강제변환 (Coercion) | 'as.data.frame()` | 'as_tibble() I
+| 데이터 불러오기 | `read .* ()` | `read_delim()`, `read_csv()`, `read_csv2()`, `read_tsv()` |
+## 5.1. 'tibble` 생성
+
+### `tibble()`
+```{r}
+tibble(
+  x = 1:5,
+  y = 1,
+  z = x^2 + y
+)
+```
+
+### `tribble()`
+- 코드 단계에서 데이터를 입력받도록 하기 위해 존재하는 함수입니다.
+```{r}
+
+tribble(
+  ~x, ~y, ~Z,
+# -- | -- | ---
+  "a", 2, 3.6,
+  "b", 1, 8.5
+)
+```
+
+### `as_tibble()`
+- 기존의 데이터 프레임을 tibble 형으로 전환 합니다.
+
+```{r}
+iris_tibble <- as_tibble(iris) # 기존의 데이터 프레임을 tibble로
+
+print(class(iris)) # 기존 데이터 프레임 클래스
+
+print(class(iris_tibble)) # 새롤게 정의된 tibble 클래스 (데이터 프레임도)
+
+head(iris_tibble)
+
+```
+
+
+
+
+## 5.2. 데이터 불러오기
+- 데이터를 읽어올 때, dataframe이 아닌 tibble로 읽어오기 위해서, 동일한 'tidyverse' 생태계에 속한 'readr' 패키지의 함수들을 필요로합니다. 이미 'tidyverse`를 library하였으므로 바로 이용 가능합니다.
+
+### `read_csv(file)`
+- 기존의 데이터 불러오기와 동일하게 파일명을 지정하여 해당 파일을 tibble로 읽어올 수 있습니다.
+```{r}
+read_csv("traffic.csv")
+
+```
+
+### `read_csv(csv_url)`
+- 외부에서 공개된 csv 파일도 바로 읽어올 수 있습니다.
+  + github, gist, google drive
+
+```{r}
+file_url <- "https://gist.githubusercontent.com/theoroe3/8bc989b644adc24117bc66f50c292fc8/raw/f677a2ad811a9854c9d174178b0585a87569af60/tibbles_data.csv"
+read_csv(file_url)
+```
+### locale 설정
+- 한글이 포함된 데이터를 읽어올 매, 'read.csv'에서 'fileEncdoing'으로 조정을 하였습니다.
+- 'read_csv' 에서는 주로 `locale`인자를 설정해 주어야 하는데, 통상적으로 `locale('ko',encoding='euc-kr')`와 같이 설정해줍니다.
+- 예제는 아래의 연습문제에서 데이터를 불러오는 것으로 알아보겠습니다.
+
+### 5. 3. 결측값 처리
+
+- 결측값을 처리하는 방법으로 결측값이 있는 행을 삭제하거나, 다른 값으로 치환하는 방법이 있습니다.
+- `drop_na()`는 결측값이 있는 행을 삭제하는 함수입니다.
+- `fill()`은 인접한 값들을 이용해서 결측값을 치환하는 방법입니다.
+- `replace_na()`는 특정한 값을 이용해서 결측값을 치환하는 방법입니다.
+
+### `drop_na()`
+```{r}
+library(dplyr)
+df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
+df %>% drop_na()
+df %>% drop_na(x)
+vars <- "y"
+df %>% drop_na(x, any_of(vars))
+```
+
+### `fill()`
+```{r}
+sales <- tibble::tribble(
+~quarter, ~year, ~sales,
+"Q1", 2000, 66013,
+"Q2", NA, 69182,
+"Q3", NA, 53175,
+"Q4", NA, 21001,
+"Q1", 2001, 46036,
+"Q2", NA, 58842,
+"Q3", NA, 44568,
+"Q4", NA, 50197,
+"Q1", 2002, 39113,
+"Q2", NA, 41668,
+"Q3", NA, 30144,
+"Q4", NA, 52897,
+"Q1", 2004, 32129,
+"Q2", NA, 67686,
+"Q3", NA, 31768,
+"Q4", NA, 49094)
+sales %>% fill(year)
+```
+
+### 'fill(.direction="up")'
+```{r}
+tidy_pets <- tibble::tribble(
+~rank, ~pet_type, ~breed,
+1L, NA, "Boston Terrier",
+2L, NA, "Retrievers (Labrador)",
+3L, NA, "Retrievers (Golden)",
+4L, NA, "French Bulldogs",
+5L, NA, "Bulldogs",
+6L, "Dog", "Beagles",
+1L, NA, "Persian",
+2L, NA, "Maine Coon",
+3L, NA, "Ragdoll",
+4L, NA, "Exotic",
+5L, NA, "Siamese",
+6L, "Cat", "American Short")
+tidy_pets %>%
+fill(pet_type, .direction = "up")
+```
+### `replace_na()`
+```{r}
+df <- tibble(x = c(1, 2, NA), y = c("a", NA, "b"))
+df %>% replace_na(list(x = 0, y = "unknown"))
+df %>% dplyr::mutate(x = replace_na(x, 0))
+```
+
+# PR12 연습문제
+```{r}
+data1 <- read.csv('data1.csv', fileEncoding = 'EUC-KR')
+data2 <- read.csv('data2.csv', fileEncoding = 'EUC-KR')
+```
+### 문제 1
+data1.csv에는 지역별 온실가스 배출량 정보가 있으며, data2.csv에는 지역별 기업수가 있다.
+두 변수를 '시도'를 기준으로 하나의 데이터프레임으로 만드시오
+조건1. wide형태를 long으로 바꾸어야 함 (gather 이용)
+조건2. join을 진행하여야함.
+조건3. head(, 10)을 통해 상위 10개만 출력하시오.
+
+```{r}
+data2_long <- data2 %>% gather(광역시도명, 규모, -등록현황 )
+```
+
+
+
+```{r}
+joindata <- left_join(data1, data2_long, by = "광역시도명")
+```
+
+
+```{r}
+head(joindata, 10)
+```
+
+### 문제 2
+```{r}
+
+filtered_data <- filter(joindata, 년도 == 2019, 등록현황 == '규모(대기업)', 규모 > 10000) %>% 
+  group_by(광역시도명)
+filtered_data
+ggplot(filtered_data, aes(x = 광역시도명, y = X1인당인구배출량, group = 1)) +
+  geom_line() +                        # 플롯에 선 추가
+  geom_point(size = 3) +               # 플롯에 점 추가
+  labs(title = "2019년 대기업 등록 10,000개 이상 도시 1인당인구배출량",   # 플롯 제목 설정
+       x = "시도명",                 # x축 레이블 설정
+       y = "1인당인구배출량") +  # y축 레이블 설정
+  scale_x_discrete(labels = filtered_data$광역시도명) 
+ # x축에 대해 사용자 정의 레이블 설정
+#applied_data <- joindata %>% group_by(광역시도명)
+```
+
+
+```{r}
+```
+
+# 12 도전문제
+## 1. 
+```{r}
+# 'corona.csv' 파일을 EUC-KR 인코딩으로 읽음
+corona <- read.csv('corona.csv', fileEncoding = 'EUC-KR')
+
+# '통계.기준일자' 열에서 " 00:00:00"을 빈 문자열로 대체
+corona_time_cleaned <- corona %>%
+  mutate(통계.기준일자 = sub(" 00:00:00", "", 통계.기준일자))
+
+# 데이터의 상단을 확인.
+head(corona_time_cleaned)
+```
+
+
+
+
+```{r}
+# 라이브러리 lubridate를 불러옴.
+library(lubridate)
+
+# 날짜 컬럼을 추출하기 위해 통계의 기준일자를 date_to_day 데이터프레임에 저장.
+date_to_day <- data.frame(date = as.Date(corona_time_cleaned$통계.기준일자))
+
+# date_to_day 데이터프레임의 날짜 컬럼을 이용하여 요일을 계산, corona_time_cleaned 데이터프레임에 weekday 컬럼을 추가.
+corona_time_cleaned$weekday <- weekdays(date_to_day$date)
+
+head(corona_time_cleaned)
+```
+
+```{r}
+# separate를 통해 통계.기준일자의 날짜를 - 를 기준으로 각각 year, month, day 컬럼을 새롭게 만듦
+corona_time_cleaned <- corona_time_cleaned %>% separate(통계.기준일자, c("year", "month", "day"))
+head(corona_time_cleaned)
+```
+
+
+```{r}
+# corona_time_cleaned 데이터프레임을 사용하여 요일별로 1차 백신 접종과 2차 백신 접종 통계의 평균을 계산.
+vaccination_day <- corona_time_cleaned %>%
+  group_by(weekday) %>%
+  summarise(mean_1st_vaccination = mean(당일.통계.1차.접종.), mean_2nd_vaccination = mean(당일.통계.2차.접종.))
+
+# vaccination_day 데이터프레임 출력
+vaccination_day
+```
+
+```{r}
+weekday_order <- c("월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일")
+
+# weekday를 순서대로 정렬
+data_sorted <- vaccination_day %>%
+  arrange(factor(weekday, levels = weekday_order))
+
+# 결과 출력
+print(data_sorted)
+```
+
+
+```{r}
+# corona_time_cleaned 데이터셋을 month로 그룹화하여,
+
+
+vaccination_month <- corona_time_cleaned %>%
+  group_by(month) %>%
+  summarise(mean_1st_vaccination = mean(당일.통계.1차.접종.), # 당일.통계.1차.접종.의 평균인 mean_1st_vaccination과
+            mean_2nd_vaccination = mean(당일.통계.2차.접종.)) # 당일.통계.2차.접종.의 평균인 mean_2nd_vaccination을 계산하여
+vaccination_month # vaccination_month 데이터프레임을 생성합니다.
+```
+## 2.Tidy data
+
+```{R}
+library(tidyverse)
+```
+
+
+```{R}
+table1
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <dbl>  <dbl>      <dbl>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table2
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <dbl> <chr>          <dbl>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ℹ 6 more rows
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#>   <chr>       <dbl> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+
+# Spread across two tibbles
+table4a  # cases
+#> # A tibble: 3 × 3
+#>   country     `1999` `2000`
+#>   <chr>        <dbl>  <dbl>
+#> 1 Afghanistan    745   2666
+#> 2 Brazil       37737  80488
+#> 3 China       212258 213766
+table4b  # population
+#> # A tibble: 3 × 3
+#>   country         `1999`     `2000`
+#>   <chr>            <dbl>      <dbl>
+#> 1 Afghanistan   19987071   20595360
+#> 2 Brazil       172006362  174504898
+#> 3 China       1272915272 1280428583
+```
+
+
+```{R}
+# Compute rate per 10,000
+table1 %>% 
+  mutate(rate = cases / population * 10000)
+#> # A tibble: 6 × 5
+#>   country      year  cases population  rate
+#>   <chr>       <dbl>  <dbl>      <dbl> <dbl>
+#> 1 Afghanistan  1999    745   19987071 0.373
+#> 2 Afghanistan  2000   2666   20595360 1.29 
+#> 3 Brazil       1999  37737  172006362 2.19 
+#> 4 Brazil       2000  80488  174504898 4.61 
+#> 5 China        1999 212258 1272915272 1.67 
+#> 6 China        2000 213766 1280428583 1.67
+
+# Compute cases per year
+table1 %>% 
+  count(year, wt = cases)
+#> # A tibble: 2 × 2
+#>    year      n
+#>   <dbl>  <dbl>
+#> 1  1999 250740
+#> 2  2000 296920
+
+# Visualise changes over time
+library(ggplot2)
+ggplot(table1, aes(year, cases)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+```
+
+
+```{R}
+table4a
+#> # A tibble: 3 × 3
+#>   country     `1999` `2000`
+#>   <chr>        <dbl>  <dbl>
+#> 1 Afghanistan    745   2666
+#> 2 Brazil       37737  80488
+#> 3 China       212258 213766
+```
+
+
+```{R}
+table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+#> # A tibble: 6 × 3
+#>   country     year   cases
+#>   <chr>       <chr>  <dbl>
+#> 1 Afghanistan 1999     745
+#> 2 Afghanistan 2000    2666
+#> 3 Brazil      1999   37737
+#> 4 Brazil      2000   80488
+#> 5 China       1999  212258
+#> 6 China       2000  213766
+```
+
+
+```{R}
+table4b %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "population")
+#> # A tibble: 6 × 3
+#>   country     year  population
+#>   <chr>       <chr>      <dbl>
+#> 1 Afghanistan 1999    19987071
+#> 2 Afghanistan 2000    20595360
+#> 3 Brazil      1999   172006362
+#> 4 Brazil      2000   174504898
+#> 5 China       1999  1272915272
+#> 6 China       2000  1280428583
+```
+
+
+```{R}
+tidy4a <- table4a %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "cases")
+tidy4b <- table4b %>% 
+  pivot_longer(c(`1999`, `2000`), names_to = "year", values_to = "population")
+left_join(tidy4a, tidy4b)
+#> Joining with `by = join_by(country, year)`
+#> # A tibble: 6 × 4
+#>   country     year   cases population
+#>   <chr>       <chr>  <dbl>      <dbl>
+#> 1 Afghanistan 1999     745   19987071
+#> 2 Afghanistan 2000    2666   20595360
+#> 3 Brazil      1999   37737  172006362
+#> 4 Brazil      2000   80488  174504898
+#> 5 China       1999  212258 1272915272
+#> 6 China       2000  213766 1280428583
+```
+
+
+```{R}
+head(table2)
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <dbl> <chr>          <dbl>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ℹ 6 more rows
+```
+
+
+```{R}
+table2 %>%
+    pivot_wider(names_from = type, values_from = count)
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <dbl>  <dbl>      <dbl>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+
+
+```{R}
+stocks <- tibble(
+  year   = c(2015, 2015, 2016, 2016),
+  half  = c(   1,    2,     1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17)
+)
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(`2015`:`2016`, names_to = "year", values_to = "return")
+```
+
+
+```{R}
+#table4a %>% 
+  #pivot_longer(c(1999, 2000), names_to = "year", values_to = "cases")
+#> Error in `pivot_longer()`:
+#> ! Can't subset columns past the end.
+#> ℹ Locations 1999 and 2000 don't exist.
+#> ℹ There are only 3 columns.
+```
+
+
+```{R}
+people <- tribble(
+  ~name,             ~names,  ~values,
+  #-----------------|--------|------
+  "Phillip Woods",   "age",       45,
+  "Phillip Woods",   "height",   186,
+  "Phillip Woods",   "age",       50,
+  "Jessica Cordero", "age",       37,
+  "Jessica Cordero", "height",   156
+)
+```
+
+
+```{R}
+preg <- tribble(
+  ~pregnant, ~male, ~female,
+  "yes",     NA,    10,
+  "no",      20,    12
+)
+```
+
+
+```{R}
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#>   <chr>       <dbl> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+```
+
+
+```{R}
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+#> # A tibble: 6 × 4
+#>   country      year cases  population
+#>   <chr>       <dbl> <chr>  <chr>     
+#> 1 Afghanistan  1999 745    19987071  
+#> 2 Afghanistan  2000 2666   20595360  
+#> 3 Brazil       1999 37737  172006362 
+#> 4 Brazil       2000 80488  174504898 
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+
+
+```{R}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+```
+
+
+```{R}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), convert = TRUE)
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <dbl>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+```
+
+
+```{R}
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+#> # A tibble: 6 × 4
+#>   country     century year  rate             
+#>   <chr>       <chr>   <chr> <chr>            
+#> 1 Afghanistan 19      99    745/19987071     
+#> 2 Afghanistan 20      00    2666/20595360    
+#> 3 Brazil      19      99    37737/172006362  
+#> 4 Brazil      20      00    80488/174504898  
+#> 5 China       19      99    212258/1272915272
+#> 6 China       20      00    213766/1280428583
+```
+
+
+```{R}
+table5 %>% 
+  unite(new, century, year)
+#> # A tibble: 6 × 3
+#>   country     new   rate             
+#>   <chr>       <chr> <chr>            
+#> 1 Afghanistan 19_99 745/19987071     
+#> 2 Afghanistan 20_00 2666/20595360    
+#> 3 Brazil      19_99 37737/172006362  
+#> 4 Brazil      20_00 80488/174504898  
+#> 5 China       19_99 212258/1272915272
+#> 6 China       20_00 213766/1280428583
+```
+
+
+```{R}
+table5 %>% 
+  unite(new, century, year, sep = "")
+#> # A tibble: 6 × 3
+#>   country     new   rate             
+#>   <chr>       <chr> <chr>            
+#> 1 Afghanistan 1999  745/19987071     
+#> 2 Afghanistan 2000  2666/20595360    
+#> 3 Brazil      1999  37737/172006362  
+#> 4 Brazil      2000  80488/174504898  
+#> 5 China       1999  212258/1272915272
+#> 6 China       2000  213766/1280428583
+```
+
+
+```{R}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"))
+
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"))
+```
+
+
+```{R}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+```
+
+
+```{R}
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return)
+#> # A tibble: 4 × 3
+#>     qtr `2015` `2016`
+#>   <dbl>  <dbl>  <dbl>
+#> 1     1   1.88  NA   
+#> 2     2   0.59   0.92
+#> 3     3   0.35   0.17
+#> 4     4  NA      2.66
+```
+
+
+```{R}
+stocks %>% 
+  pivot_wider(names_from = year, values_from = return) %>% 
+  pivot_longer(
+    cols = c(`2015`, `2016`), 
+    names_to = "year", 
+    values_to = "return", 
+    values_drop_na = TRUE
+  )
+#> # A tibble: 6 × 3
+#>     qtr year  return
+#>   <dbl> <chr>  <dbl>
+#> 1     1 2015    1.88
+#> 2     2 2015    0.59
+#> 3     2 2016    0.92
+#> 4     3 2015    0.35
+#> 5     3 2016    0.17
+#> 6     4 2016    2.66
+```
+
+```{R}
+stocks %>% 
+  complete(year, qtr)
+#> # A tibble: 8 × 3
+#>    year   qtr return
+#>   <dbl> <dbl>  <dbl>
+#> 1  2015     1   1.88
+#> 2  2015     2   0.59
+#> 3  2015     3   0.35
+#> 4  2015     4  NA   
+#> 5  2016     1  NA   
+#> 6  2016     2   0.92
+#> # ℹ 2 more rows
+```
+
+
+```{R}
+stocks %>% 
+  complete(year, qtr)
+#> # A tibble: 8 × 3
+#>    year   qtr return
+#>   <dbl> <dbl>  <dbl>
+#> 1  2015     1   1.88
+#> 2  2015     2   0.59
+#> 3  2015     3   0.35
+#> 4  2015     4  NA   
+#> 5  2016     1  NA   
+#> 6  2016     2   0.92
+#> # ℹ 2 more rows
+```
+
+
+```{R}
+treatment <- tribble(
+  ~ person,           ~ treatment, ~response,
+  "Derrick Whitmore", 1,           7,
+  NA,                 2,           10,
+  NA,                 3,           9,
+  "Katherine Burke",  1,           4
+)
+```
+
+```{R}
+treatment %>% 
+  fill(person)
+#> # A tibble: 4 × 3
+#>   person           treatment response
+#>   <chr>                <dbl>    <dbl>
+#> 1 Derrick Whitmore         1        7
+#> 2 Derrick Whitmore         2       10
+#> 3 Derrick Whitmore         3        9
+#> 4 Katherine Burke          1        4
+```
+
+
+```{R}
+head(who)
+who <- who
+#> # A tibble: 7,240 × 60
+#>   country   iso2  iso3   year new_sp_m014 new_sp_m1524 new_sp_m2534 new_sp_m3544
+#>   <chr>     <chr> <chr> <dbl>       <dbl>        <dbl>        <dbl>        <dbl>
+#> 1 Afghanis… AF    AFG    1980          NA           NA           NA           NA
+#> 2 Afghanis… AF    AFG    1981          NA           NA           NA           NA
+#> 3 Afghanis… AF    AFG    1982          NA           NA           NA           NA
+#> 4 Afghanis… AF    AFG    1983          NA           NA           NA           NA
+#> 5 Afghanis… AF    AFG    1984          NA           NA           NA           NA
+#> 6 Afghanis… AF    AFG    1985          NA           NA           NA           NA
+#> # ℹ 7,234 more rows
+#> # ℹ 52 more variables: new_sp_m4554 <dbl>, new_sp_m5564 <dbl>,
+#> #   new_sp_m65 <dbl>, new_sp_f014 <dbl>, new_sp_f1524 <dbl>,
+#> #   new_sp_f2534 <dbl>, new_sp_f3544 <dbl>, new_sp_f4554 <dbl>,
+#> #   new_sp_f5564 <dbl>, new_sp_f65 <dbl>, new_sn_m014 <dbl>,
+#> #   new_sn_m1524 <dbl>, new_sn_m2534 <dbl>, new_sn_m3544 <dbl>,
+#> #   new_sn_m4554 <dbl>, new_sn_m5564 <dbl>, new_sn_m65 <dbl>, …
+```
+
+
+```{R}
+who1 <- who %>% 
+  pivot_longer(
+    cols = 5:40, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  )
+head(who1)
+#> # A tibble: 76,046 × 6
+#>   country     iso2  iso3   year key          cases
+#>   <chr>       <chr> <chr> <dbl> <chr>        <dbl>
+#> 1 Afghanistan AF    AFG    1997 new_sp_m014      0
+#> 2 Afghanistan AF    AFG    1997 new_sp_m1524    10
+#> 3 Afghanistan AF    AFG    1997 new_sp_m2534     6
+#> 4 Afghanistan AF    AFG    1997 new_sp_m3544     3
+#> 5 Afghanistan AF    AFG    1997 new_sp_m4554     5
+#> 6 Afghanistan AF    AFG    1997 new_sp_m5564     2
+#> # ℹ 76,040 more rows
+```
+
+
+```{R}
+head(who1 %>% 
+  count(key))
+#> # A tibble: 56 × 2
+#>   key              n
+#>   <chr>        <int>
+#> 1 new_ep_f014   1032
+#> 2 new_ep_f1524  1021
+#> 3 new_ep_f2534  1021
+#> 4 new_ep_f3544  1021
+#> 5 new_ep_f4554  1017
+#> 6 new_ep_f5564  1017
+#> # ℹ 50 more rows
+```
+
+
+```{R}
+who2 <- who1 %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel"))
+head(who2)
+#> # A tibble: 76,046 × 6
+#>   country     iso2  iso3   year key          cases
+#>   <chr>       <chr> <chr> <dbl> <chr>        <dbl>
+#> 1 Afghanistan AF    AFG    1997 new_sp_m014      0
+#> 2 Afghanistan AF    AFG    1997 new_sp_m1524    10
+#> 3 Afghanistan AF    AFG    1997 new_sp_m2534     6
+#> 4 Afghanistan AF    AFG    1997 new_sp_m3544     3
+#> 5 Afghanistan AF    AFG    1997 new_sp_m4554     5
+#> 6 Afghanistan AF    AFG    1997 new_sp_m5564     2
+#> # ℹ 76,040 more rows
+```
+
+
+```{R}
+who3 <- who2 %>% 
+  separate(key, c("new", "type", "sexage"), sep = "_")
+head(who3)
+#> # A tibble: 76,046 × 8
+#>   country     iso2  iso3   year new   type  sexage cases
+#>   <chr>       <chr> <chr> <dbl> <chr> <chr> <chr>  <dbl>
+#> 1 Afghanistan AF    AFG    1997 new   sp    m014       0
+#> 2 Afghanistan AF    AFG    1997 new   sp    m1524     10
+#> 3 Afghanistan AF    AFG    1997 new   sp    m2534      6
+#> 4 Afghanistan AF    AFG    1997 new   sp    m3544      3
+#> 5 Afghanistan AF    AFG    1997 new   sp    m4554      5
+#> 6 Afghanistan AF    AFG    1997 new   sp    m5564      2
+#> # ℹ 76,040 more rows
+```
+
+
+```{R}
+who3 %>% 
+  count(new)
+#> # A tibble: 1 × 2
+#>   new       n
+#>   <chr> <int>
+#> 1 new   76046
+who4 <- who3 %>% 
+  select(-new, -iso2, -iso3)
+```
+
+
+```{R}
+who5 <- who4 %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+who5
+#> # A tibble: 76,046 × 6
+#>   country      year type  sex   age   cases
+#>   <chr>       <dbl> <chr> <chr> <chr> <dbl>
+#> 1 Afghanistan  1997 sp    m     014       0
+#> 2 Afghanistan  1997 sp    m     1524     10
+#> 3 Afghanistan  1997 sp    m     2534      6
+#> 4 Afghanistan  1997 sp    m     3544      3
+#> 5 Afghanistan  1997 sp    m     4554      5
+#> 6 Afghanistan  1997 sp    m     5564      2
+#> # ℹ 76,040 more rows
+```
+
+
+```{R}
+head(who %>%
+  pivot_longer(
+    cols = 5:40, 
+    names_to = "key", 
+    values_to = "cases", 
+    values_drop_na = TRUE
+  ) %>% 
+  mutate(
+    key = stringr::str_replace(key, "newrel", "new_rel")
+  ) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1))
+```
+
+
+```{R}
+```
+
+
+```{R}
+```
+
+
+```{R}
+```
